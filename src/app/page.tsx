@@ -8,8 +8,11 @@ import { AuthButton } from '@/components/auth-button';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { hasEnvVars } from '@/lib/utils';
 import Link from 'next/link';
+import { UserRoundPen } from 'lucide-react';
 import { FileList } from '@/components/r2/file-list';
 import { UploadForm } from '@/components/r2/upload-form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import ProfileSettings from '@/components/profile-settings';
 
 export default function Home() {
   const supabase = createClient();
@@ -38,11 +41,29 @@ export default function Home() {
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-full flex flex-col gap-12 items-center">
         <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full max-w-5xl flex justify-between items-center p-3 px-5 text-sm">
+          <div className="w-full flex justify-between items-center p-3 px-5 text-sm">
             <div className="flex gap-5 items-center font-semibold">
               <Link href={'/'}>Cloudflare R2 Dashboard</Link>
             </div>
-            {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
+            <div className="flex items-center gap-3">
+              {user && (
+                <Dialog>
+                    <DialogTrigger asChild>
+                      <button className="text-muted-foreground hover:text-foreground transition-colors">
+                        <UserRoundPen className="h-5 w-5" />
+                      </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>编辑个人资料</DialogTitle>
+                      </DialogHeader>
+                      <ProfileSettings />
+                    </DialogContent>
+                  </Dialog>
+              )}
+              {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
+              <ThemeSwitcher />
+            </div>
           </div>
         </nav>
         <div className="flex-1 flex flex-col gap-10 max-w-5xl w-full p-5 items-center">
@@ -75,7 +96,6 @@ export default function Home() {
               Supabase
             </a>
           </p>
-          <ThemeSwitcher />
         </footer>
       </div>
     </main>
