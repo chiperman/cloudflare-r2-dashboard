@@ -14,9 +14,12 @@ export async function GET(request: NextRequest) {
     const files = Contents?.map(file => ({
       key: file.Key,
       size: file.Size,
-      lastModified: file.LastModified,
+      uploadedAt: file.LastModified,
       url: `/api/images/${file.Key}`,
     })) || [];
+
+    // Sort files by upload date in descending order
+    files.sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
 
     return NextResponse.json(files);
   } catch (error) {
