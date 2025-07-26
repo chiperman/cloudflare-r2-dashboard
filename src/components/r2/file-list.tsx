@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Trash2, CheckCircle } from 'lucide-react';
+import { Copy, Trash2, CheckCircle, File as FileIcon } from 'lucide-react';
 
 interface R2File {
   key: string;

@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
-import { Upload, File, X } from 'lucide-react';
+import { Upload, File as FileIcon, X } from 'lucide-react';
+import { nanoid } from 'nanoid';
 
 const MAX_SIZE_MB = 30;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -51,10 +52,25 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
     setUploadProgress(0);
 
     try {
+      // Create a new filename based on YYYYMMDD-HHMMSS-xxxxxx.ext
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const day = now.getDate().toString().padStart(2, '0');
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      const seconds = now.getSeconds().toString().padStart(2, '0');
+      const randomId = nanoid(6); // Generate a 6-character random string
+
+      const fileExtension = file.name.split('.').pop();
+      const newFileName = `${year}${month}${day}-${hours}${minutes}${seconds}-${randomId}.${fileExtension}`;
+      
+      const renamedFile = new File([file], newFileName, { type: file.type });
+
       const response = await fetch('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name, contentType: file.type }),
+        body: JSON.stringify({ filename: renamedFile.name, contentType: renamedFile.type }),
       });
 
       if (!response.ok) throw new Error('Failed to get presigned URL.');
@@ -85,7 +101,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
         setIsUploading(false);
       };
 
-      xhr.send(file);
+      xhr.send(renamedFile);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       setIsUploading(false);
@@ -118,7 +134,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
       {file && (
         <div className="mt-4 p-4 border rounded-lg flex items-center justify-between bg-muted/50">
           <div className="flex items-center gap-3">
-            <File className="w-6 h-6 text-muted-foreground" />
+            <FileIcon className="w-6 h-6 text-muted-foreground" />
             <div>
               <p className="font-medium">{file.name}</p>
               <p className="text-sm text-muted-foreground">{(file.size / 1024).toFixed(2)} KB</p>
