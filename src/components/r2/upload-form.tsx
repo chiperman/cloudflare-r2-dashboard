@@ -64,7 +64,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
 
       const fileExtension = file.name.split('.').pop();
       const newFileName = `${year}${month}${day}-${hours}${minutes}${seconds}-${randomId}.${fileExtension}`;
-      
+
       const renamedFile = new File([file], newFileName, { type: file.type });
 
       const response = await fetch('/api/upload', {
@@ -172,7 +172,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
         disabled={!file || isUploading}
         className="mt-6 w-full bg-primary text-primary-foreground font-semibold py-2 px-4 rounded-lg transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90"
       >
-        {isUploading ? 'Uploading...' : 'Upload File'}
+        {isUploading ? '上传中...' : '上传图片'}
       </button>
     </div>
   );

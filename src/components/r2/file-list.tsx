@@ -1,12 +1,17 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Copy, Trash2, CheckCircle, File as FileIcon } from 'lucide-react';
+import { Copy, Trash2, CheckCircle } from 'lucide-react';
 
 interface R2File {
   key: string;
@@ -24,7 +29,13 @@ function formatBytes(bytes: number, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-export function FileList({ refreshTrigger, onActionComplete }: { refreshTrigger: number, onActionComplete: () => void }) {
+export function FileList({
+  refreshTrigger,
+  onActionComplete,
+}: {
+  refreshTrigger: number;
+  onActionComplete: () => void;
+}) {
   const [files, setFiles] = useState<R2File[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +88,6 @@ export function FileList({ refreshTrigger, onActionComplete }: { refreshTrigger:
 
       // Notify parent to refresh the list
       onActionComplete();
-
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     }
@@ -85,24 +95,25 @@ export function FileList({ refreshTrigger, onActionComplete }: { refreshTrigger:
 
   if (isLoading) return <div className="text-center p-8">Loading files...</div>;
   if (error) return <div className="text-center p-8 text-destructive">Error: {error}</div>;
-  if (files.length === 0) return <div className="text-center p-8 text-muted-foreground">No files found.</div>;
+  if (files.length === 0)
+    return <div className="text-center p-8 text-muted-foreground">No files found.</div>;
 
   return (
     <div className="w-full border rounded-lg">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[80px]">Preview</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Uploaded At</TableHead>
-            <TableHead>Size</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="text-center">预览</TableHead>
+            <TableHead className="text-center">文件名</TableHead>
+            <TableHead className="text-center">上传时间</TableHead>
+            <TableHead className="text-center">文件大小</TableHead>
+            <TableHead className="text-center">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {files.map((file) => (
             <TableRow key={file.key}>
-              <TableCell>
+              <TableCell className="flex justify-center">
                 <Image
                   src={file.url}
                   alt={file.key}
@@ -111,11 +122,13 @@ export function FileList({ refreshTrigger, onActionComplete }: { refreshTrigger:
                   className="rounded-md object-cover h-[50px] w-[50px]"
                 />
               </TableCell>
-              <TableCell className="font-medium">{file.key}</TableCell>
-              <TableCell>{new Date(file.uploadedAt).toLocaleString()}</TableCell>
-              <TableCell>{formatBytes(file.size)}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex gap-2 justify-end">
+              <TableCell className="font-medium text-center">{file.key}</TableCell>
+              <TableCell className="text-center">
+                {new Date(file.uploadedAt).toLocaleString()}
+              </TableCell>
+              <TableCell className="text-center">{formatBytes(file.size)}</TableCell>
+              <TableCell>
+                <div className="flex gap-2 justify-center">
                   <Button variant="outline" size="sm" onClick={() => handleCopy(file.key)}>
                     {copiedKey === file.key ? (
                       <CheckCircle className="h-4 w-4 text-green-500" />
