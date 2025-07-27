@@ -16,10 +16,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+interface SignUpFormProps extends React.ComponentPropsWithoutRef<"div"> {
+  onSignUpSuccess?: () => void;
+}
+
 export function SignUpForm({
   className,
+  onSignUpSuccess,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: SignUpFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
@@ -49,6 +54,7 @@ export function SignUpForm({
       });
       if (error) throw error;
       router.push("/auth/sign-up-success");
+      onSignUpSuccess?.();
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {

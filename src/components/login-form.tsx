@@ -16,10 +16,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+interface LoginFormProps extends React.ComponentPropsWithoutRef<"div"> {
+  onLoginSuccess?: () => void;
+}
+
 export function LoginForm({
   className,
+  onLoginSuccess,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +45,7 @@ export function LoginForm({
       if (error) throw error;
       // Update this route to redirect to an authenticated route. The user already has an active session.
       router.push("/protected");
+      onLoginSuccess?.();
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
