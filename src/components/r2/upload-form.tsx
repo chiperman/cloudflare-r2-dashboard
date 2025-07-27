@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
 import { Upload, File as FileIcon, X } from 'lucide-react';
-import { nanoid } from 'nanoid';
 
 const MAX_SIZE_MB = 30;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -11,7 +10,6 @@ const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void }) {
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
@@ -49,61 +47,26 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
 
     setIsUploading(true);
     setError(null);
-    setUploadProgress(0);
 
     try {
-      // Create a new filename based on YYYYMMDD-HHMMSS-xxxxxx.ext
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = (now.getMonth() + 1).toString().padStart(2, '0');
-      const day = now.getDate().toString().padStart(2, '0');
-      const hours = now.getHours().toString().padStart(2, '0');
-      const minutes = now.getMinutes().toString().padStart(2, '0');
-      const seconds = now.getSeconds().toString().padStart(2, '0');
-      const randomId = nanoid(6); // Generate a 6-character random string
-
-      const fileExtension = file.name.split('.').pop();
-      const newFileName = `${year}${month}${day}-${hours}${minutes}${seconds}-${randomId}.${fileExtension}`;
-
-      const renamedFile = new File([file], newFileName, { type: file.type });
+      const formData = new FormData();
+      formData.append('file', file);
 
       const response = await fetch('/api/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: renamedFile.name, contentType: renamedFile.type }),
+        body: formData,
       });
 
-      if (!response.ok) throw new Error('Failed to get presigned URL.');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed.');
+      }
 
-      const { url } = await response.json();
-
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', url, true);
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = (event.loaded / event.total) * 100;
-          setUploadProgress(percentComplete);
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          onUploadSuccess();
-          setFile(null);
-        } else {
-          setError(`Upload failed: ${xhr.statusText}`);
-        }
-        setIsUploading(false);
-      };
-
-      xhr.onerror = () => {
-        setError('Upload failed due to a network error.');
-        setIsUploading(false);
-      };
-
-      xhr.send(renamedFile);
+      onUploadSuccess();
+      setFile(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
       setIsUploading(false);
     }
   };
@@ -152,17 +115,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
       )}
 
       {isUploading && (
-        <div className="mt-4">
-          <div className="w-full bg-muted rounded-full h-2.5">
-            <div
-              className="bg-primary h-2.5 rounded-full"
-              style={{ width: `${uploadProgress}%` }}
-            ></div>
-          </div>
-          <p className="text-sm text-center mt-2 text-muted-foreground">
-            Uploading... {Math.round(uploadProgress)}%
-          </p>
-        </div>
+        <div className="mt-4 text-center text-muted-foreground">Uploading...</div>
       )}
 
       {error && <p className="mt-2 text-sm text-destructive">{error}</p>}

@@ -2,7 +2,7 @@
 
 import UpdatePasswordForm from '@/components/update-password-form';
 import UpdateDisplayNameForm from '@/components/update-display-name-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { User } from '@supabase/supabase-js';
 
