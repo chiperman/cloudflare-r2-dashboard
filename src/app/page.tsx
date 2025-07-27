@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { cookies } from 'next/headers';
+;
 import { EnvVarWarning } from '@/components/env-var-warning';
 import { AuthButton } from '@/components/auth-button';
 import { ThemeSwitcher } from '@/components/theme-switcher';
@@ -9,8 +9,8 @@ import { ProfileDialog } from '@/components/profile-dialog';
 import { HomeClientContent } from '@/components/home-client-content';
 
 export default async function Home() {
-  const cookieStore = cookies();
-  const supabase = await createClient(cookieStore);
+  
+  const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
 
@@ -23,9 +23,11 @@ export default async function Home() {
               <Link href={'/'}>Cloudflare R2 Dashboard</Link>
             </div>
             <div className="flex items-center gap-3">
-              {user && <ProfileDialog user={user} />}
+              <div className="flex items-center gap-3">
+                {user && <ProfileDialog user={user} />}
+                <ThemeSwitcher />
+              </div>
               {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
-              <ThemeSwitcher />
             </div>
           </div>
         </nav>

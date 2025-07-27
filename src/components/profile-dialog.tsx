@@ -20,7 +20,7 @@ export function ProfileDialog({ user }: ProfileDialogProps) {
     <Dialog>
       <DialogTrigger asChild>
         <button className="text-muted-foreground hover:text-foreground transition-colors">
-          <UserRoundPen className="h-5 w-5" />
+          <User className="h-5 w-5" />
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
