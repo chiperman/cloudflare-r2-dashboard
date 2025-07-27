@@ -1,6 +1,6 @@
 'use client';
 
-import { UserRoundPen } from 'lucide-react';
+import { User } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
