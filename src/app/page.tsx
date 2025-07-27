@@ -1,41 +1,18 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import type { User } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
+import { cookies } from 'next/headers';
 import { EnvVarWarning } from '@/components/env-var-warning';
 import { AuthButton } from '@/components/auth-button';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { hasEnvVars } from '@/lib/utils';
 import Link from 'next/link';
-import { UserRoundPen } from 'lucide-react';
-import { FileList } from '@/components/r2/file-list';
-import { UploadForm } from '@/components/r2/upload-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import ProfileSettings from '@/components/profile-settings';
+import { ProfileDialog } from '@/components/profile-dialog';
+import { HomeClientContent } from '@/components/home-client-content';
 
-export default function Home() {
-  const supabase = createClient();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
-      setLoading(false);
-    };
-    getUser();
-  }, [supabase.auth]);
-
-  const handleActionComplete = () => {
-    setRefreshKey(prevKey => prevKey + 1);
-  };
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  }
+export default async function Home() {
+  const cookieStore = cookies();
+  const supabase = await createClient(cookieStore);
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   return (
     <main className="min-h-screen flex flex-col items-center">
@@ -46,21 +23,7 @@ export default function Home() {
               <Link href={'/'}>Cloudflare R2 Dashboard</Link>
             </div>
             <div className="flex items-center gap-3">
-              {user && (
-                <Dialog>
-                    <DialogTrigger asChild>
-                      <button className="text-muted-foreground hover:text-foreground transition-colors">
-                        <UserRoundPen className="h-5 w-5" />
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                      <DialogHeader>
-                        <DialogTitle>编辑个人资料</DialogTitle>
-                      </DialogHeader>
-                      <ProfileSettings />
-                    </DialogContent>
-                  </Dialog>
-              )}
+              {user && <ProfileDialog />}
               {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
               <ThemeSwitcher />
             </div>
@@ -68,12 +31,7 @@ export default function Home() {
         </nav>
         <div className="flex-1 flex flex-col gap-10 max-w-5xl w-full p-5 items-center">
           {user ? (
-            <div className="w-full">
-              <UploadForm onUploadSuccess={handleActionComplete} />
-              <div className="mt-8">
-                <FileList key={refreshKey} refreshTrigger={refreshKey} onActionComplete={handleActionComplete} />
-              </div>
-            </div>
+            <HomeClientContent />
           ) : (
             <section className="flex flex-col items-center gap-6 mt-16 text-center">
               <h1 className="text-5xl font-bold">Manage Your Cloudflare R2 Files</h1>

@@ -12,17 +12,18 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface SignUpFormProps extends React.ComponentPropsWithoutRef<"div"> {
   onSignUpSuccess?: () => void;
+  onSwitchToLogin: () => void;
 }
 
 export function SignUpForm({
   className,
   onSignUpSuccess,
+  onSwitchToLogin,
   ...props
 }: SignUpFormProps) {
   const [email, setEmail] = useState("");
@@ -53,7 +54,6 @@ export function SignUpForm({
         },
       });
       if (error) throw error;
-      router.push("/auth/sign-up-success");
       onSignUpSuccess?.();
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
@@ -114,9 +114,13 @@ export function SignUpForm({
             </div>
             <div className="mt-4 text-center text-sm">
               Already have an account?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
+              <button
+                type="button"
+                onClick={onSwitchToLogin}
+                className="underline underline-offset-4"
+              >
                 Login
-              </Link>
+              </button>
             </div>
           </form>
         </CardContent>
@@ -124,3 +128,4 @@ export function SignUpForm({
     </div>
   );
 }
+

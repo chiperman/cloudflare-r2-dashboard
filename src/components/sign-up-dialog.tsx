@@ -8,29 +8,35 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { SignUpForm } from "@/components/sign-up-form";
-import { useState } from "react";
 
 interface SignUpDialogProps {
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSwitchToLogin: () => void;
   onSignUpSuccess?: () => void;
 }
 
-export function SignUpDialog({ children, onSignUpSuccess }: SignUpDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
+export function SignUpDialog({
+  open,
+  onOpenChange,
+  onSwitchToLogin,
+  onSignUpSuccess,
+}: SignUpDialogProps) {
   const handleSignUpSuccess = () => {
-    setIsOpen(false);
+    onOpenChange(false);
     onSignUpSuccess?.();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>注册</DialogTitle>
         </DialogHeader>
-        <SignUpForm onSignUpSuccess={handleSignUpSuccess} />
+        <SignUpForm
+          onSignUpSuccess={handleSignUpSuccess}
+          onSwitchToLogin={onSwitchToLogin}
+        />
       </DialogContent>
     </Dialog>
   );

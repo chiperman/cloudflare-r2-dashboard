@@ -8,29 +8,38 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { LoginForm } from "@/components/login-form";
-import { useState } from "react";
 
 interface LoginDialogProps {
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSwitchToSignUp: () => void;
+  onSwitchToForgotPassword: () => void;
   onLoginSuccess?: () => void;
 }
 
-export function LoginDialog({ children, onLoginSuccess }: LoginDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
+export function LoginDialog({
+  open,
+  onOpenChange,
+  onSwitchToSignUp,
+  onSwitchToForgotPassword,
+  onLoginSuccess,
+}: LoginDialogProps) {
   const handleLoginSuccess = () => {
-    setIsOpen(false);
+    onOpenChange(false);
     onLoginSuccess?.();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>登录</DialogTitle>
         </DialogHeader>
-        <LoginForm onLoginSuccess={handleLoginSuccess} />
+        <LoginForm
+          onLoginSuccess={handleLoginSuccess}
+          onSwitchToSignUp={onSwitchToSignUp}
+          onSwitchToForgotPassword={onSwitchToForgotPassword}
+        />
       </DialogContent>
     </Dialog>
   );
