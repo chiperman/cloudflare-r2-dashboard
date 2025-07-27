@@ -38,7 +38,7 @@ export default function UpdateDisplayNameForm({
   };
 
   return (
-    <Card>
+        <Card>
       <CardHeader>
         <CardTitle className="text-2xl">修改昵称</CardTitle>
         <CardDescription>请输入新昵称</CardDescription>
@@ -49,7 +49,7 @@ export default function UpdateDisplayNameForm({
             <Input
               id="displayName"
               type="text"
-              placeholder="新显示名称"
+              placeholder="New name"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               required
@@ -57,7 +57,7 @@ export default function UpdateDisplayNameForm({
           </div>
           {message && <p className="text-sm text-green-500">{message}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? '更新中...' : '更新显示名称'}
+            {loading ? '更新中...' : '更新昵称'}
           </Button>
         </form>
       </CardContent>

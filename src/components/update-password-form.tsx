@@ -37,7 +37,7 @@ export default function UpdatePasswordForm({
   };
 
   return (
-    <div className={cn('flex flex-col gap-6', className)} {...props}>
+        <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">重置密码</CardTitle>

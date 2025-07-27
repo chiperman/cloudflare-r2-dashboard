@@ -1,10 +1,21 @@
 'use client';
 
 import { UserRoundPen } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import ProfileSettings from '@/components/profile-settings';
+import type { User } from '@supabase/supabase-js';
 
-export function ProfileDialog() {
+interface ProfileDialogProps {
+  user: User;
+}
+
+export function ProfileDialog({ user }: ProfileDialogProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -16,7 +27,7 @@ export function ProfileDialog() {
         <DialogHeader>
           <DialogTitle>编辑个人资料</DialogTitle>
         </DialogHeader>
-        <ProfileSettings />
+        <ProfileSettings user={user} />
       </DialogContent>
     </Dialog>
   );
