@@ -9,6 +9,8 @@ import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { LogoutButton } from "./logout-button";
 import { useRouter } from "next/navigation";
+import { ProfileDialog } from "./profile-dialog";
+import { ThemeSwitcher } from "./theme-switcher";
 
 export function AuthDialogManager() {
   const [user, setUser] = useState<User | null>(null);
@@ -52,6 +54,8 @@ export function AuthDialogManager() {
       <div className="flex items-center gap-4">
         Hey, {user.user_metadata.display_name || user.email}!
         <LogoutButton />
+        <ProfileDialog user={user} />
+        <ThemeSwitcher />
       </div>
     );
   }
@@ -60,10 +64,10 @@ export function AuthDialogManager() {
     <>
       <div className="flex gap-2">
         <Button size="sm" variant="outline" onClick={() => setLoginOpen(true)}>
-          Sign in
+          登录
         </Button>
         <Button size="sm" variant="default" onClick={() => setSignUpOpen(true)}>
-          Sign up
+          注册
         </Button>
       </div>
 

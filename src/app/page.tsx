@@ -23,10 +23,6 @@ export default async function Home() {
               <Link href={'/'}>Cloudflare R2 Dashboard</Link>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-3">
-                {user && <ProfileDialog user={user} />}
-                <ThemeSwitcher />
-              </div>
               {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
             </div>
           </div>
