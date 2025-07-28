@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Copy, Trash2, Expand } from 'lucide-react';
+import { Copy, Trash2, Eye } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import {
   AlertDialog,
@@ -54,7 +54,8 @@ export function FileList() {
   const [previewFile, setPreviewFile] = useState<R2File | null>(null);
 
   const handleCopy = (url: string) => {
-    navigator.clipboard.writeText(url).then(() => {
+    const absoluteUrl = `${window.location.origin}${url}`;
+    navigator.clipboard.writeText(absoluteUrl).then(() => {
       toast({ title: '已复制', description: '文件链接已复制到剪贴板' });
     });
   };
@@ -99,16 +100,16 @@ export function FileList() {
             {files.map((file: R2File) => (
               <TableRow key={file.key}>
                 <TableCell className="flex justify-center">
-                  <button className="relative group" onClick={() => setPreviewFile(file)}>
+                  <button className="relative group transition-transform hover:scale-105" onClick={() => setPreviewFile(file)}>
                     <Image
                       src={file.thumbnailUrl}
                       alt={file.key}
                       width={50}
                       height={50}
-                      className="rounded-md object-cover h-[50px] w-[50px] cursor-pointer transition-transform group-hover:scale-105"
+                      className="rounded-md object-cover h-[50px] w-[50px] cursor-pointer"
                     />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Expand className="h-6 w-6 text-white" />
+                    <div className="absolute inset-0 bg-black/50 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Eye className="h-6 w-6 text-white" />
                     </div>
                   </button>
                 </TableCell>
