@@ -1,6 +1,6 @@
 'use client';
 
-import { User } from 'lucide-react';
+import { User as UserIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ export function ProfileDialog({ user }: ProfileDialogProps) {
     <Dialog>
       <DialogTrigger asChild>
         <button className="text-muted-foreground hover:text-foreground transition-colors">
-          <User className="h-5 w-5" />
+          <UserIcon className="h-5 w-5" />
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

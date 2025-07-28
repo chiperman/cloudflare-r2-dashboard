@@ -48,9 +48,14 @@ interface R2File {
   thumbnailUrl: string;
 }
 
-export function FileList() {
+interface FileListProps {
+  refreshTrigger: number;
+  onActionComplete: () => void;
+}
+
+export function FileList({ refreshTrigger, onActionComplete }: FileListProps) {
   const { toast } = useToast();
-  const { data: files, error, isLoading, mutate } = useSWR<R2File[]>('/api/files', fetcher);
+  const { data: files, error, isLoading, mutate } = useSWR<R2File[]>(['/api/files', refreshTrigger], fetcher);
   const [previewFile, setPreviewFile] = useState<R2File | null>(null);
 
   const handleCopy = (url: string) => {
@@ -69,6 +74,7 @@ export function FileList() {
       }
       toast({ title: '删除成功', description: `${fileKey} 已被删除` });
       mutate(); // ✅ 刷新文件列表
+      onActionComplete(); // 通知父组件操作完成
     } catch (err) {
       toast({
         title: '删除失败',

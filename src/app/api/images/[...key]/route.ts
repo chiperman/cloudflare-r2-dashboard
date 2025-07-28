@@ -1,13 +1,14 @@
-
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { s3Client } from '@/lib/r2';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { key: string[] } }
-) {
-  const key = params.key.join('/');
+export async function GET(req: NextRequest) {
+  // 解析 key 参数
+  // 路径如 /api/images/a/b/c，key = ['a','b','c']
+  const pathParts = req.nextUrl.pathname.split('/');
+  const apiIndex = pathParts.findIndex((p) => p === 'api');
+  const keyParts = pathParts.slice(apiIndex + 2); // ['a','b','c']
+  const key = keyParts.join('/');
 
   try {
     const command = new GetObjectCommand({
@@ -38,4 +39,3 @@ export async function GET(
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
-
