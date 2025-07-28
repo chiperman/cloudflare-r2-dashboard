@@ -9,12 +9,24 @@ export async function DELETE(
   const fileKey = params.key.join('/');
 
   try {
-    const command = new DeleteObjectCommand({
+    const originalKey = `originals/${fileKey}`;
+    const thumbnailKey = `thumbnails/${fileKey}`;
+
+    const deleteOriginalCommand = new DeleteObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
-      Key: fileKey,
+      Key: originalKey,
     });
 
-    await s3Client.send(command);
+    const deleteThumbnailCommand = new DeleteObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: thumbnailKey,
+    });
+
+    // 同时发送两个删除请求
+    await Promise.all([
+      s3Client.send(deleteOriginalCommand),
+      s3Client.send(deleteThumbnailCommand),
+    ]);
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
