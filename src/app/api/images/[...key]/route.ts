@@ -30,8 +30,8 @@ export async function GET(
         'Cache-Control': 'public, max-age=31536000, immutable',
       },
     });
-  } catch (error: any) {
-    if (error.name === 'NoSuchKey') {
+  } catch (error) {
+    if (error instanceof Error && error.name === 'NoSuchKey') {
       return new NextResponse('Image not found', { status: 404 });
     }
     console.error(`Error fetching image ${key} from R2:`, error);
