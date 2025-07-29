@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
 import { Upload, File as FileIcon, X, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/components/ui/use-toast';
 
 const MAX_SIZE_MB = 30;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -20,9 +21,20 @@ interface UploadableFile {
 export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void }) {
   const [files, setFiles] = useState<UploadableFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   const onDrop = useCallback(
     (acceptedFiles: File[], fileRejections: FileRejection[]) => {
+      // 检查是否因为文件过多而被拒绝
+      if (fileRejections.some((rej) => rej.errors.some((err) => err.code === 'too-many-files'))) {
+        toast({
+          title: '上传数量超出限制',
+          description: `您一次最多只能选择 ${MAX_FILES} 个文件。`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const newFiles: UploadableFile[] = acceptedFiles.map((file) => ({
         id: `${file.name}-${file.size}-${file.lastModified}`,
         file,
@@ -40,11 +52,10 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
 
       setFiles((prevFiles) => {
         const combined = [...prevFiles, ...newFiles, ...rejectedFiles];
-        // 确保总文件数不超过最大限制
         return combined.slice(0, MAX_FILES);
       });
     },
-    []
+    [toast]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -85,9 +96,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           setFiles((prevFiles) =>
-            prevFiles.map((f) =>
-              f.id === fileToUpload.id ? { ...f, status: 'success' } : f
-            )
+            prevFiles.map((f) => (f.id === fileToUpload.id ? { ...f, status: 'success' } : f))
           );
           resolve();
         } else {
@@ -96,9 +105,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
             const errorMessage = errorData.error || 'Upload failed.';
             setFiles((prevFiles) =>
               prevFiles.map((f) =>
-                f.id === fileToUpload.id
-                  ? { ...f, status: 'error', error: errorMessage }
-                  : f
+                f.id === fileToUpload.id ? { ...f, status: 'error', error: errorMessage } : f
               )
             );
             reject(new Error(errorMessage));
@@ -106,9 +113,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
             const errorMessage = 'Upload failed with status: ' + xhr.status;
             setFiles((prevFiles) =>
               prevFiles.map((f) =>
-                f.id === fileToUpload.id
-                  ? { ...f, status: 'error', error: errorMessage }
-                  : f
+                f.id === fileToUpload.id ? { ...f, status: 'error', error: errorMessage } : f
               )
             );
             reject(new Error(errorMessage));
@@ -137,25 +142,30 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
 
     setIsUploading(true);
 
-    // 将所有待上传文件状态标记为 'uploading'
     setFiles((prevFiles) =>
-      prevFiles.map((f) =>
-        f.status === 'pending' ? { ...f, status: 'uploading' } : f
-      )
+      prevFiles.map((f) => (f.status === 'pending' ? { ...f, status: 'uploading' } : f))
     );
 
     const uploadPromises = filesToUpload.map((file) => uploadFile(file));
 
-    try {
-      await Promise.all(uploadPromises);
-      // 所有文件处理完毕（无论成功或失败）后，刷新主列表
-      onUploadSuccess();
-    } catch (error) {
-      // Promise.all 会在第一个 reject 时失败，但我们的 uploadFile 函数内部已经处理了每个文件的状态更新
-      // 所以这里只需要捕获并记录一个全局的错误提示即可
-      console.error('One or more files failed to upload.', error);
-    } finally {
-      setIsUploading(false);
+    const results = await Promise.allSettled(uploadPromises);
+
+    setIsUploading(false);
+    onUploadSuccess();
+
+    const hasFailures = results.some((result) => result.status === 'rejected');
+
+    if (!hasFailures) {
+      toast({ title: '上传成功', description: '所有文件都已成功上传。' });
+      setTimeout(() => {
+        setFiles([]);
+      }, 2000);
+    } else {
+      toast({
+        title: '部分文件上传失败',
+        description: '请检查文件列表中的错误信息。',
+        variant: 'destructive',
+      });
     }
   };
 
