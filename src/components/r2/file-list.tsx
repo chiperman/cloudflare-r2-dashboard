@@ -54,10 +54,9 @@ interface R2File {
 
 interface FileListProps {
   refreshTrigger: number;
-  onActionComplete: () => void;
 }
 
-export function FileList({ refreshTrigger, onActionComplete }: FileListProps) {
+export function FileList({ refreshTrigger }: FileListProps) {
   const { toast } = useToast();
   const { data: files, error, isLoading, mutate } = useSWR<R2File[]>(['/api/files', refreshTrigger], fetcher);
   const [previewFile, setPreviewFile] = useState<R2File | null>(null);

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
-import { Upload, File as FileIcon, X, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Upload, File as FileIcon, X, CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -109,7 +109,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
               )
             );
             reject(new Error(errorMessage));
-          } catch (e) {
+          } catch (_e) {
             const errorMessage = 'Upload failed with status: ' + xhr.status;
             setFiles((prevFiles) =>
               prevFiles.map((f) =>
