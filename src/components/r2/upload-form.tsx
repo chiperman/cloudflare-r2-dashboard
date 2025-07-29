@@ -153,16 +153,35 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
     setIsUploading(false);
     onUploadSuccess();
 
-    const hasFailures = results.some((result) => result.status === 'rejected');
+    const successfulUploadIds = new Set<string>();
+    const failedUploadIds = new Set<string>();
 
-    if (!hasFailures) {
+    results.forEach((result, index) => {
+      const originalFile = filesToUpload[index];
+      if (result.status === 'fulfilled') {
+        successfulUploadIds.add(originalFile.id);
+      } else {
+        failedUploadIds.add(originalFile.id);
+      }
+    });
+
+    // Filter out successfully uploaded files from the state
+    setFiles((prevFiles) => prevFiles.filter((f) => !successfulUploadIds.has(f.id)));
+
+    const successfulCount = successfulUploadIds.size;
+    const failedCount = failedUploadIds.size;
+
+    if (successfulCount > 0 && failedCount === 0) {
       toast({ title: '上传成功', description: '所有文件都已成功上传。' });
-      setTimeout(() => {
-        setFiles([]);
-      }, 2000);
-    } else {
+    } else if (successfulCount > 0 && failedCount > 0) {
       toast({
-        title: '部分文件上传失败',
+        title: '部分文件上传成功',
+        description: `成功上传 ${successfulCount} 个文件，${failedCount} 个文件上传失败。`,
+        variant: 'default',
+      });
+    } else if (successfulCount === 0 && failedCount > 0) {
+      toast({
+        title: '所有文件上传失败',
         description: '请检查文件列表中的错误信息。',
         variant: 'destructive',
       });
