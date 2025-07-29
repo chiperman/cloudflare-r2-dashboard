@@ -109,7 +109,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
               )
             );
             reject(new Error(errorMessage));
-          } catch (_e) {
+          } catch {
             const errorMessage = 'Upload failed with status: ' + xhr.status;
             setFiles((prevFiles) =>
               prevFiles.map((f) =>
