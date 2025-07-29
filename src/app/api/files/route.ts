@@ -1,9 +1,11 @@
+
 import { ListObjectsV2Command } from '@aws-sdk/client-s3';
-import { s3Client } from '@/lib/r2';
+import { getS3Client } from '@/lib/r2';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
+    const s3Client = getS3Client(); // 使用 getS3Client 获取实例
     const listOriginalsCommand = new ListObjectsV2Command({
       Bucket: process.env.R2_BUCKET_NAME,
       Prefix: 'originals/',
@@ -34,6 +36,9 @@ export async function GET() {
     return NextResponse.json(files);
   } catch (error) {
     console.error('Error listing files:', error);
-    return NextResponse.json({ error: 'Failed to list files' }, { status: 500 });
+    // 返回更详细的错误信息
+    const errorMessage = error instanceof Error ? error.message : 'Failed to list files';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
+

@@ -1,5 +1,5 @@
 import { GetObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client } from '@/lib/r2';
+import { getS3Client } from '@/lib/r2';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
   const key = keyParts.join('/');
 
   try {
+    const s3Client = getS3Client(); // 使用 getS3Client 获取实例
     const command = new GetObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME,
       Key: key,
@@ -36,6 +37,8 @@ export async function GET(req: NextRequest) {
       return new NextResponse('Image not found', { status: 404 });
     }
     console.error(`Error fetching image ${key} from R2:`, error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    const errorMessage =
+      error instanceof Error ? error.message : 'Internal Server Error';
+    return new NextResponse(errorMessage, { status: 500 });
   }
 }

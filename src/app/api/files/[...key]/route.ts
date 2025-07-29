@@ -1,5 +1,6 @@
+
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client } from '@/lib/r2';
+import { getS3Client } from '@/lib/r2';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function DELETE(request: NextRequest) {
@@ -12,6 +13,7 @@ export async function DELETE(request: NextRequest) {
   const fileKey = keyParts.join('/');
 
   try {
+    const s3Client = getS3Client(); // 使用 getS3Client 获取实例
     const originalKey = `originals/${fileKey}`;
     const thumbnailKey = `thumbnails/${fileKey}`;
 
@@ -33,6 +35,9 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error(`Error deleting file ${fileKey}:`, error);
-    return NextResponse.json({ error: `Failed to delete file: ${fileKey}` }, { status: 500 });
+    const errorMessage =
+      error instanceof Error ? error.message : `Failed to delete file: ${fileKey}`;
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
+

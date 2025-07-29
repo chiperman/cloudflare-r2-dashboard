@@ -38,7 +38,10 @@ function formatBytes(bytes: number, decimals = 2) {
 }
 
 // ✅ SWR fetcher
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (args: string | string[]) => {
+  const url = Array.isArray(args) ? args[0] : args;
+  return fetch(url).then((res) => res.json());
+};
 
 interface R2File {
   key: string;

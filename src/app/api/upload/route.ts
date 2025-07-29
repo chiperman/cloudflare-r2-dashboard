@@ -1,12 +1,13 @@
 
 import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client } from '@/lib/r2';
+import { getS3Client } from '@/lib/r2';
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { nanoid } from 'nanoid';
 
 // Helper function to upload a buffer to R2
 async function uploadToR2(buffer: Buffer, key: string, contentType: string) {
+  const s3Client = getS3Client(); // 使用 getS3Client 获取实例
   const command = new PutObjectCommand({
     Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
@@ -56,9 +57,13 @@ export async function POST(request: NextRequest) {
       uploadToR2(thumbnailBuffer, thumbnailKey, `image/${fileExtension}`),
     ]);
 
-    return NextResponse.json({ success: true, message: 'File and thumbnail uploaded successfully' });
+    return NextResponse.json({
+      success: true,
+      message: 'File and thumbnail uploaded successfully',
+    });
   } catch (error) {
     console.error('Upload failed:', error);
-    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Failed to upload file';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
