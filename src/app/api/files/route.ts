@@ -52,8 +52,11 @@ export async function DELETE(request: Request) {
     const s3Client = getS3Client();
     const bucketName = process.env.R2_BUCKET_NAME;
 
-    // 构建要删除的对象数组
-    const objectsToDelete = keys.map((key) => ({ Key: `originals/${key}` }));
+    // For each key, add both the original and the thumbnail to the delete list
+    const objectsToDelete = keys.flatMap((key) => [
+      { Key: `originals/${key}` },
+      { Key: `thumbnails/${key}` },
+    ]);
 
     const deleteCommand = new DeleteObjectsCommand({
       Bucket: bucketName,
