@@ -19,7 +19,7 @@ export function HomeClientContent({ initialRefreshKey = 0 }: HomeClientContentPr
     <div className="w-full">
       <UploadForm onUploadSuccess={handleActionComplete} />
       <div className="mt-8">
-        <FileList key={refreshKey} refreshTrigger={refreshKey} onActionComplete={handleActionComplete} />
+        <FileList key={refreshKey} refreshTrigger={refreshKey} />
       </div>
     </div>
   );
