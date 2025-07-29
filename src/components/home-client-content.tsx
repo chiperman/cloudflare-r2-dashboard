@@ -4,22 +4,26 @@ import { useState } from 'react';
 import { UploadForm } from '@/components/r2/upload-form';
 import { FileList } from '@/components/r2/file-list';
 
-interface HomeClientContentProps {
-  initialRefreshKey?: number;
+interface R2File {
+  key: string;
+  size: number;
+  uploadedAt: string;
+  url: string;
+  thumbnailUrl: string;
 }
 
-export function HomeClientContent({ initialRefreshKey = 0 }: HomeClientContentProps) {
-  const [refreshKey, setRefreshKey] = useState(initialRefreshKey);
+export function HomeClientContent() {
+  const [newlyUploadedFiles, setNewlyUploadedFiles] = useState<R2File[]>([]);
 
-  const handleActionComplete = () => {
-    setRefreshKey(prevKey => prevKey + 1);
+  const handleUploadSuccess = (newFiles: R2File[]) => {
+    setNewlyUploadedFiles(newFiles);
   };
 
   return (
     <div className="w-full">
-      <UploadForm onUploadSuccess={handleActionComplete} />
+      <UploadForm onUploadSuccess={handleUploadSuccess} />
       <div className="mt-8">
-        <FileList key={refreshKey} refreshTrigger={refreshKey} />
+        <FileList newlyUploadedFiles={newlyUploadedFiles} />
       </div>
     </div>
   );

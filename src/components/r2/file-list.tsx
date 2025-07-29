@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import useSWR from 'swr';
 import {
@@ -28,7 +28,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
-// ✅ 抽离格式化函数，避免重复定义
+// Utility function to format bytes
 function formatBytes(bytes: number, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -38,11 +38,8 @@ function formatBytes(bytes: number, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-// ✅ SWR fetcher
-const fetcher = (args: string | string[]) => {
-  const url = Array.isArray(args) ? args[0] : args;
-  return fetch(url).then((res) => res.json());
-};
+// SWR fetcher
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface R2File {
   key: string;
@@ -53,41 +50,56 @@ interface R2File {
 }
 
 interface FileListProps {
-  refreshTrigger: number;
+  newlyUploadedFiles: R2File[];
 }
 
-export function FileList({ refreshTrigger }: FileListProps) {
+export function FileList({ newlyUploadedFiles }: FileListProps) {
   const { toast } = useToast();
-  const { data: files, error, isLoading, mutate } = useSWR<R2File[]>(['/api/files', refreshTrigger], fetcher);
+  const { data: files, error, isLoading, mutate } = useSWR<R2File[]>('/api/files', fetcher);
   const [previewFile, setPreviewFile] = useState<R2File | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (newlyUploadedFiles.length > 0) {
+      mutate((currentFiles = []) => {
+        const newFilesMap = new Map(newlyUploadedFiles.map((file) => [file.key, file]));
+        const updatedFiles = currentFiles.filter((file) => !newFilesMap.has(file.key));
+        return [...newlyUploadedFiles, ...updatedFiles];
+      }, false);
+    }
+  }, [newlyUploadedFiles, mutate]);
 
   const handleCopy = (url: string) => {
     const absoluteUrl = `${window.location.origin}${url}`;
     navigator.clipboard.writeText(absoluteUrl).then(() => {
-      toast({ title: '已复制', description: '文件链接已复制到剪贴板' });
+      toast({ title: 'Copied!', description: 'File link copied to clipboard.' });
     });
   };
 
   const handleDelete = async (fileKey: string) => {
+    // Optimistically remove the file from the UI
+    mutate(
+      (currentFiles) => currentFiles?.filter((file) => file.key !== fileKey),
+      false
+    );
+
     try {
       const response = await fetch(`/api/files/${fileKey}`, { method: 'DELETE' });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || '删除文件失败');
+        throw new Error(errorData.error || 'Failed to delete file.');
       }
-      toast({ title: '删除成功', description: `${fileKey} 已被删除` });
-      // 使用乐观更新，直接从缓存中移除文件，避免重新请求
-      mutate(
-        files?.filter((file) => file.key !== fileKey),
-        false
-      );
+      toast({ title: 'Deleted', description: `${fileKey} has been deleted.` });
+      // Re-fetch to confirm deletion, or rely on optimistic update
+      mutate();
     } catch (err) {
       toast({
-        title: '删除失败',
-        description: err instanceof Error ? err.message : '未知错误',
+        title: 'Delete failed',
+        description: err instanceof Error ? err.message : 'Unknown error',
         variant: 'destructive',
       });
+      // Revert the optimistic update on failure
+      mutate();
     }
   };
 
@@ -95,10 +107,12 @@ export function FileList({ refreshTrigger }: FileListProps) {
     const keysToDelete = Array.from(selectedKeys);
     if (keysToDelete.length === 0) return;
 
-    // 乐观更新 UI
     const originalFiles = files;
-    const updatedFiles = files?.filter((file) => !selectedKeys.has(file.key));
-    mutate(updatedFiles, false);
+    // Optimistically update UI
+    mutate(
+      (currentFiles) => currentFiles?.filter((file) => !selectedKeys.has(file.key)),
+      false
+    );
     setSelectedKeys(new Set());
 
     try {
@@ -110,19 +124,21 @@ export function FileList({ refreshTrigger }: FileListProps) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || '批量删除失败');
+        throw new Error(errorData.error || 'Bulk delete failed.');
       }
 
       toast({
-        title: '删除成功',
-        description: `成功删除了 ${keysToDelete.length} 个文件。`,
+        title: 'Delete successful',
+        description: `Successfully deleted ${keysToDelete.length} files.`,
       });
+      // Re-fetch to confirm deletion
+      mutate();
     } catch (err) {
-      // 如果出错，则恢复原始文件列表
+      // Revert on error
       mutate(originalFiles, false);
       toast({
-        title: '删除失败',
-        description: err instanceof Error ? err.message : '未知错误',
+        title: 'Delete failed',
+        description: err instanceof Error ? err.message : 'Unknown error',
         variant: 'destructive',
       });
     }
@@ -147,13 +163,14 @@ export function FileList({ refreshTrigger }: FileListProps) {
       setSelectedKeys(new Set(files?.map((file) => file.key)));
     }
   };
-  
+
   const isAllSelected = useMemo(() => files && selectedKeys.size === files.length, [files, selectedKeys]);
 
-  if (isLoading) return <div className="text-center p-8">加载文件中...</div>;
-  if (error) return <div className="text-center p-8 text-destructive">加载失败</div>;
+  if (isLoading) return <div className="text-center p-8">Loading files...</div>;
+  if (error) return <div className="text-center p-8 text-destructive">Failed to load</div>;
   if (!files || files.length === 0)
-    return <div className="text-center p-8 text-muted-foreground">没有文件</div>;
+    return <div className="text-center p-8 text-muted-foreground">No files</div>;
+
 
   return (
     <>

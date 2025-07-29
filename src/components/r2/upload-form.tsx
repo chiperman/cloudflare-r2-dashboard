@@ -18,18 +18,26 @@ interface UploadableFile {
   error?: string;
 }
 
-export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void }) {
+interface R2File {
+  key: string;
+  size: number;
+  uploadedAt: string;
+  url: string;
+  thumbnailUrl: string;
+}
+
+export function UploadForm({ onUploadSuccess }: { onUploadSuccess: (newFiles: R2File[]) => void }) {
   const [files, setFiles] = useState<UploadableFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
   const onDrop = useCallback(
     (acceptedFiles: File[], fileRejections: FileRejection[]) => {
-      // 检查是否因为文件过多而被拒绝
+      // Check if rejection is due to too many files
       if (fileRejections.some((rej) => rej.errors.some((err) => err.code === 'too-many-files'))) {
         toast({
-          title: '上传数量超出限制',
-          description: `您一次最多只能选择 ${MAX_FILES} 个文件。`,
+          title: 'Upload limit exceeded',
+          description: `You can only select up to ${MAX_FILES} files at a time.`,
           variant: 'destructive',
         });
         return;
@@ -52,6 +60,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
 
       setFiles((prevFiles) => {
         const combined = [...prevFiles, ...newFiles, ...rejectedFiles];
+        // Enforce the MAX_FILES limit on the total number of files
         return combined.slice(0, MAX_FILES);
       });
     },
@@ -75,8 +84,8 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
     setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
   };
 
-  const uploadFile = (fileToUpload: UploadableFile) => {
-    return new Promise<void>((resolve, reject) => {
+  const uploadFile = (fileToUpload: UploadableFile): Promise<R2File> => {
+    return new Promise<R2File>((resolve, reject) => {
       const formData = new FormData();
       formData.append('file', fileToUpload.file);
 
@@ -95,10 +104,21 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          setFiles((prevFiles) =>
-            prevFiles.map((f) => (f.id === fileToUpload.id ? { ...f, status: 'success' } : f))
-          );
-          resolve();
+          try {
+            const newFile: R2File = JSON.parse(xhr.responseText);
+            setFiles((prevFiles) =>
+              prevFiles.map((f) => (f.id === fileToUpload.id ? { ...f, status: 'success' } : f))
+            );
+            resolve(newFile);
+          } catch {
+            const errorMessage = 'Failed to parse server response.';
+            setFiles((prevFiles) =>
+              prevFiles.map((f) =>
+                f.id === fileToUpload.id ? { ...f, status: 'error', error: errorMessage } : f
+              )
+            );
+            reject(new Error(errorMessage));
+          }
         } else {
           try {
             const errorData = JSON.parse(xhr.responseText);
@@ -147,42 +167,46 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: () => void })
     );
 
     const uploadPromises = filesToUpload.map((file) => uploadFile(file));
-
     const results = await Promise.allSettled(uploadPromises);
 
     setIsUploading(false);
-    onUploadSuccess();
 
+    const successfulUploads: R2File[] = [];
     const successfulUploadIds = new Set<string>();
     const failedUploadIds = new Set<string>();
 
     results.forEach((result, index) => {
       const originalFile = filesToUpload[index];
       if (result.status === 'fulfilled') {
+        successfulUploads.push(result.value);
         successfulUploadIds.add(originalFile.id);
       } else {
         failedUploadIds.add(originalFile.id);
       }
     });
 
+    if (successfulUploads.length > 0) {
+      onUploadSuccess(successfulUploads);
+    }
+
     // Filter out successfully uploaded files from the state
     setFiles((prevFiles) => prevFiles.filter((f) => !successfulUploadIds.has(f.id)));
 
-    const successfulCount = successfulUploadIds.size;
+    const successfulCount = successfulUploads.length;
     const failedCount = failedUploadIds.size;
 
     if (successfulCount > 0 && failedCount === 0) {
-      toast({ title: '上传成功', description: '所有文件都已成功上传。' });
+      toast({ title: 'Upload successful', description: 'All files have been uploaded.' });
     } else if (successfulCount > 0 && failedCount > 0) {
       toast({
-        title: '部分文件上传成功',
-        description: `成功上传 ${successfulCount} 个文件，${failedCount} 个文件上传失败。`,
+        title: 'Partial upload success',
+        description: `Successfully uploaded ${successfulCount} files, ${failedCount} files failed.`,
         variant: 'default',
       });
     } else if (successfulCount === 0 && failedCount > 0) {
       toast({
-        title: '所有文件上传失败',
-        description: '请检查文件列表中的错误信息。',
+        title: 'All uploads failed',
+        description: 'Please check the errors in the file list.',
         variant: 'destructive',
       });
     }

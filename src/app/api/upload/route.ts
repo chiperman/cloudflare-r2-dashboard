@@ -57,13 +57,26 @@ export async function POST(request: NextRequest) {
       uploadToR2(thumbnailBuffer, thumbnailKey, `image/${fileExtension}`),
     ]);
 
-    return NextResponse.json({
-      success: true,
-      message: 'File and thumbnail uploaded successfully',
-    });
+    const newFile: R2File = {
+      key: newFileName,
+      size: file.size,
+      uploadedAt: now.toISOString(),
+      url: `/api/images/originals/${newFileName}`,
+      thumbnailUrl: `/api/images/thumbnails/${newFileName}`,
+    };
+
+    return NextResponse.json(newFile);
   } catch (error) {
     console.error('Upload failed:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to upload file';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
+}
+
+interface R2File {
+  key: string;
+  size: number;
+  uploadedAt: string;
+  url: string;
+  thumbnailUrl: string;
 }
