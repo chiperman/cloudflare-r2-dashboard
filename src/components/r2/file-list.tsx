@@ -27,6 +27,21 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Utility function to format bytes
 function formatBytes(bytes: number, decimals = 2) {
@@ -49,25 +64,58 @@ interface R2File {
   thumbnailUrl: string;
 }
 
+interface FileListResponse {
+  files: R2File[];
+  nextContinuationToken?: string;
+  isTruncated?: boolean;
+}
+
 interface FileListProps {
   newlyUploadedFiles: R2File[];
 }
 
 export function FileList({ newlyUploadedFiles }: FileListProps) {
   const { toast } = useToast();
-  const { data: files, error, isLoading, mutate } = useSWR<R2File[]>('/api/files', fetcher);
-  const [previewFile, setPreviewFile] = useState<R2File | null>(null);
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [continuationTokens, setContinuationTokens] = useState<(string | undefined)[]>([undefined]);
+
+  const swrKey = `/api/files?limit=${pageSize}&continuationToken=${continuationTokens[currentPage - 1] || ''}`;
+  const { data, error, isLoading, mutate } = useSWR<FileListResponse>(swrKey, fetcher);
+
+  const files = useMemo(() => data?.files || [], [data]);
+  const hasMore = data?.isTruncated || false;
+
+  useEffect(() => {
+    if (data?.nextContinuationToken && continuationTokens.length === currentPage) {
+      setContinuationTokens(prev => [...prev, data.nextContinuationToken]);
+    }
+  }, [data, currentPage, continuationTokens]);
 
   useEffect(() => {
     if (newlyUploadedFiles.length > 0) {
-      mutate((currentFiles = []) => {
-        const newFilesMap = new Map(newlyUploadedFiles.map((file) => [file.key, file]));
-        const updatedFiles = currentFiles.filter((file) => !newFilesMap.has(file.key));
-        return [...newlyUploadedFiles, ...updatedFiles];
-      }, false);
+      mutate(); // Re-fetch the current page to show the new files
     }
   }, [newlyUploadedFiles, mutate]);
+
+  const [previewFile, setPreviewFile] = useState<R2File | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+
+  const handleNextPage = () => {
+    if (hasMore) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    setCurrentPage(prev => Math.max(1, prev - 1));
+  };
+
+  const handlePageSizeChange = (value: string) => {
+    setPageSize(parseInt(value, 10));
+    setCurrentPage(1);
+    setContinuationTokens([undefined]);
+  };
 
   const handleCopy = (url: string) => {
     const absoluteUrl = `${window.location.origin}${url}`;
@@ -77,12 +125,6 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
   };
 
   const handleDelete = async (fileKey: string) => {
-    // Optimistically remove the file from the UI
-    mutate(
-      (currentFiles) => currentFiles?.filter((file) => file.key !== fileKey),
-      false
-    );
-
     try {
       const response = await fetch(`/api/files/${fileKey}`, { method: 'DELETE' });
       if (!response.ok) {
@@ -90,30 +132,19 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
         throw new Error(errorData.error || 'Failed to delete file.');
       }
       toast({ title: 'Deleted', description: `${fileKey} has been deleted.` });
-      // Re-fetch to confirm deletion, or rely on optimistic update
-      mutate();
+      mutate(); // Re-fetch the current page data
     } catch (err) {
       toast({
         title: 'Delete failed',
         description: err instanceof Error ? err.message : 'Unknown error',
         variant: 'destructive',
       });
-      // Revert the optimistic update on failure
-      mutate();
     }
   };
 
   const handleBulkDelete = async () => {
     const keysToDelete = Array.from(selectedKeys);
     if (keysToDelete.length === 0) return;
-
-    const originalFiles = files;
-    // Optimistically update UI
-    mutate(
-      (currentFiles) => currentFiles?.filter((file) => !selectedKeys.has(file.key)),
-      false
-    );
-    setSelectedKeys(new Set());
 
     try {
       const response = await fetch('/api/files', {
@@ -131,11 +162,9 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
         title: 'Delete successful',
         description: `Successfully deleted ${keysToDelete.length} files.`,
       });
-      // Re-fetch to confirm deletion
-      mutate();
+      setSelectedKeys(new Set());
+      mutate(); // Re-fetch the current page data
     } catch (err) {
-      // Revert on error
-      mutate(originalFiles, false);
       toast({
         title: 'Delete failed',
         description: err instanceof Error ? err.message : 'Unknown error',
@@ -164,13 +193,15 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
     }
   };
 
-  const isAllSelected = useMemo(() => files && selectedKeys.size === files.length, [files, selectedKeys]);
+  const isAllSelected = useMemo(
+    () => files && files.length > 0 && selectedKeys.size === files.length,
+    [files, selectedKeys]
+  );
 
   if (isLoading) return <div className="text-center p-8">Loading files...</div>;
   if (error) return <div className="text-center p-8 text-destructive">Failed to load</div>;
   if (!files || files.length === 0)
     return <div className="text-center p-8 text-muted-foreground">No files</div>;
-
 
   return (
     <>
@@ -179,10 +210,7 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px] text-center">
-                <Checkbox
-                  checked={isAllSelected}
-                  onCheckedChange={handleSelectAll}
-                />
+                <Checkbox checked={isAllSelected} onCheckedChange={handleSelectAll} />
               </TableHead>
               <TableHead className="text-center">预览</TableHead>
               <TableHead className="text-center">文件名</TableHead>
@@ -201,7 +229,10 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
                   />
                 </TableCell>
                 <TableCell className="flex justify-center">
-                  <button className="relative group transition-transform hover:scale-105" onClick={() => setPreviewFile(file)}>
+                  <button
+                    className="relative group transition-transform hover:scale-105"
+                    onClick={() => setPreviewFile(file)}
+                  >
                     <Image
                       src={file.thumbnailUrl}
                       alt={file.key}
@@ -252,6 +283,39 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
             ))}
           </TableBody>
         </Table>
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center space-x-2">
+            <p className="text-sm font-medium">Rows per page</p>
+            <Select
+              value={`${pageSize}`}
+              onValueChange={(value) => handlePageSizeChange(value)}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={`${pageSize}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {[10, 20, 50].map(size => (
+                  <SelectItem key={size} value={`${size}`}>{size}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center space-x-6 lg:space-x-8">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious onClick={handlePrevPage} className={currentPage === 1 ? "pointer-events-none opacity-50" : ""} />
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationLink isActive>{currentPage}</PaginationLink>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext onClick={handleNextPage} className={!hasMore ? "pointer-events-none opacity-50" : ""} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        </div>
       </div>
       {selectedKeys.size > 0 && (
         <div className="fixed bottom-10 right-10 z-50">

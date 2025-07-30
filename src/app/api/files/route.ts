@@ -3,15 +3,24 @@ import { ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { getS3Client } from '@/lib/r2';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+import { NextRequest } from 'next/server';
+
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const continuationToken = searchParams.get('continuationToken') || undefined;
+
   try {
-    const s3Client = getS3Client(); // 使用 getS3Client 获取实例
+    const s3Client = getS3Client();
     const listOriginalsCommand = new ListObjectsV2Command({
       Bucket: process.env.R2_BUCKET_NAME,
       Prefix: 'originals/',
+      ContinuationToken: continuationToken,
+      MaxKeys: parseInt(searchParams.get('limit') || '10', 10),
     });
 
-    const { Contents } = await s3Client.send(listOriginalsCommand);
+    const { Contents, NextContinuationToken, IsTruncated } = await s3Client.send(
+      listOriginalsCommand
+    );
 
     const files =
       Contents?.map((file) => {
@@ -26,17 +35,19 @@ export async function GET() {
         };
       }) || [];
 
-    // Sort files by upload date in descending order，处理 uploadedAt 可能为 undefined 的情况
     files.sort((a, b) => {
       const dateA = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
       const dateB = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0;
       return dateB - dateA;
     });
 
-    return NextResponse.json(files);
+    return NextResponse.json({
+      files,
+      nextContinuationToken: NextContinuationToken,
+      isTruncated: IsTruncated,
+    });
   } catch (error) {
     console.error('Error listing files:', error);
-    // 返回更详细的错误信息
     const errorMessage = error instanceof Error ? error.message : 'Failed to list files';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
