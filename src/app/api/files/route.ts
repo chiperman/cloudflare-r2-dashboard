@@ -26,14 +26,16 @@ export async function GET(request: NextRequest) {
 
     const files =
       Contents?.filter(file => file.Key !== prefix && !file.Key?.endsWith('/')).map((file) => {
-        const key = file.Key || '';
-        const fileName = key.substring(prefix.length);
+        const fullKey = file.Key || '';
+        const fileNameOnly = fullKey.split('/').pop() || '';
+        const relativeKey = fullKey.substring(prefix.length);
+
         return {
-          key: fileName,
+          key: relativeKey, // For display in the list
           size: file.Size,
           uploadedAt: file.LastModified,
-          url: `/api/images/${key}`,
-          thumbnailUrl: `/api/images/thumbnails/${fileName}`,
+          url: `/api/images/${fullKey}`, // For full image preview and copy link
+          thumbnailUrl: `/api/images/thumbnails/${fileNameOnly}`, // For thumbnail preview
         };
       }) || [];
 

@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Copy, Trash2, Eye, Folder as FolderIcon } from 'lucide-react';
+import { Copy, Trash2, Eye, Folder as FolderIcon, FolderPlus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import {
   AlertDialog,
@@ -25,7 +25,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Pagination,
@@ -117,6 +118,9 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
 
   const [previewFile, setPreviewFile] = useState<R2File | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [folderNameError, setFolderNameError] = useState('');
 
   const handleNextPage = () => {
     if (hasMore) {
@@ -143,6 +147,54 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
     }
     const newPrefix = currentPrefix.split('/').slice(0, index + 1).join('/') + '/';
     setCurrentPrefix(newPrefix);
+  };
+
+  const handleCreateFolder = async () => {
+    if (!newFolderName) return;
+    try {
+      const response = await fetch('/api/folders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderName: newFolderName, currentPrefix }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '创建文件夹失败。');
+      }
+      toast({ title: '成功', description: `文件夹 "${newFolderName}" 创建成功。` });
+      setNewFolderName('');
+      setIsCreateFolderOpen(false);
+      mutate();
+    } catch (err) {
+      toast({
+        title: '创建失败',
+        description: err instanceof Error ? err.message : '未知错误',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteFolder = async (folderName: string) => {
+    const folderPrefix = `${currentPrefix}${folderName}/`;
+    try {
+      const response = await fetch('/api/folders', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prefix: folderPrefix }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '删除文件夹失败。');
+      }
+      toast({ title: '成功', description: `文件夹 "${folderName}" 已被删除。` });
+      mutate();
+    } catch (err) {
+      toast({
+        title: '删除失败',
+        description: err instanceof Error ? err.message : '未知错误',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleCopy = (url: string) => {
@@ -260,6 +312,45 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
         </Breadcrumb>
       </div>
 
+      <div className="mb-4">
+        <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <FolderPlus className="mr-2 h-4 w-4" />
+              新建文件夹
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>新建文件夹</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Input 
+                placeholder="请输入文件夹名称"
+                value={newFolderName}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setNewFolderName(name);
+                  const safeNameRegex = /^[a-zA-Z0-9_-]*$/;
+                  if (!safeNameRegex.test(name)) {
+                    setFolderNameError('名称只能包含字母、数字、- 和 _');
+                  } else {
+                    setFolderNameError('');
+                  }
+                }}
+              />
+              {folderNameError && <p className="text-sm text-destructive mt-2">{folderNameError}</p>}
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="ghost">取消</Button>
+              </DialogClose>
+              <Button onClick={handleCreateFolder} disabled={!!folderNameError || !newFolderName}>创建</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
       <div className="w-full border rounded-lg">
         <Table>
           <TableHeader>
@@ -284,7 +375,29 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
                 <TableCell className="font-medium">{dir}</TableCell>
                 <TableCell></TableCell>
                 <TableCell></TableCell>
-                <TableCell></TableCell>
+                <TableCell className="text-center">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>确认删除文件夹？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          您确定要删除文件夹 &quot;{dir}&quot; 及其包含的所有内容吗？此操作不可恢复。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteFolder(dir)}>
+                          确认删除
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </TableCell>
               </TableRow>
             ))}
             {files.map((file: R2File) => (
