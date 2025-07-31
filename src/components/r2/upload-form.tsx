@@ -36,8 +36,8 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
       // Check if rejection is due to too many files
       if (fileRejections.some((rej) => rej.errors.some((err) => err.code === 'too-many-files'))) {
         toast({
-          title: 'Upload limit exceeded',
-          description: `You can only select up to ${MAX_FILES} files at a time.`,
+          title: '超出上传限制',
+          description: `一次最多只能选择 ${MAX_FILES} 个文件。`,
           variant: 'destructive',
         });
         return;
@@ -112,7 +112,7 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
             );
             resolve(newFile);
           } catch {
-            const errorMessage = 'Failed to parse server response.';
+            const errorMessage = '解析服务器响应失败。';
             setFiles((prevFiles) =>
               prevFiles.map((f) =>
                 f.id === fileToUpload.id ? { ...f, status: 'error', error: errorMessage } : f
@@ -123,7 +123,7 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
         } else {
           try {
             const errorData = JSON.parse(xhr.responseText);
-            const errorMessage = errorData.error || 'Upload failed.';
+            const errorMessage = errorData.error || '上传失败。';
             setFiles((prevFiles) =>
               prevFiles.map((f) =>
                 f.id === fileToUpload.id ? { ...f, status: 'error', error: errorMessage } : f
@@ -131,7 +131,7 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
             );
             reject(new Error(errorMessage));
           } catch {
-            const errorMessage = 'Upload failed with status: ' + xhr.status;
+            const errorMessage = '上传失败，状态码：' + xhr.status;
             setFiles((prevFiles) =>
               prevFiles.map((f) =>
                 f.id === fileToUpload.id ? { ...f, status: 'error', error: errorMessage } : f
@@ -143,7 +143,7 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
       };
 
       xhr.onerror = () => {
-        const errorMessage = 'An error occurred during the upload.';
+        const errorMessage = '上传过程中发生错误。';
         setFiles((prevFiles) =>
           prevFiles.map((f) =>
             f.id === fileToUpload.id ? { ...f, status: 'error', error: errorMessage } : f
@@ -197,17 +197,17 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
     const failedCount = failedUploadIds.size;
 
     if (successfulCount > 0 && failedCount === 0) {
-      toast({ title: 'Upload successful', description: 'All files have been uploaded.' });
+      toast({ title: '上传成功', description: '所有文件都已上传。' });
     } else if (successfulCount > 0 && failedCount > 0) {
       toast({
-        title: 'Partial upload success',
-        description: `Successfully uploaded ${successfulCount} files, ${failedCount} files failed.`,
+        title: '部分上传成功',
+        description: `成功上传 ${successfulCount} 个文件，${failedCount} 个文件失败。`,
         variant: 'default',
       });
     } else if (successfulCount === 0 && failedCount > 0) {
       toast({
-        title: 'All uploads failed',
-        description: 'Please check the errors in the file list.',
+        title: '所有上传均失败',
+        description: '请检查文件列表中的错误信息。',
         variant: 'destructive',
       });
     }
@@ -230,12 +230,12 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
         <div className="flex flex-col items-center gap-2 text-muted-foreground">
           <Upload className="w-8 h-8" />
           {isDragActive ? (
-            <p>Drop files here ...</p>
+            <p>松开即可上传</p>
           ) : (
-            <p>Drag & drop images here, or click to select</p>
+            <p>拖拽文件到此处，或点击选择文件</p>
           )}
           <p className="text-xs">
-            (Max {MAX_FILES} files, {MAX_SIZE_MB}MB each; JPEG, PNG, GIF, WEBP, SVG)
+            (最多 {MAX_FILES} 个文件，每个不超过 {MAX_SIZE_MB}MB; 支持 JPEG, PNG, GIF, WEBP, SVG)
           </p>
         </div>
       </div>
@@ -289,7 +289,7 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
         disabled={pendingFilesCount === 0 || isUploading}
         className="mt-6 w-full bg-primary text-primary-foreground font-semibold py-2 px-4 rounded-lg transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90"
       >
-        {isUploading ? 'Uploading...' : `Upload ${pendingFilesCount} File(s)`}
+        {isUploading ? '上传中...' : `上传 ${pendingFilesCount} 个文件`}
       </button>
     </div>
   );

@@ -148,7 +148,7 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
   const handleCopy = (url: string) => {
     const absoluteUrl = `${window.location.origin}${url}`;
     navigator.clipboard.writeText(absoluteUrl).then(() => {
-      toast({ title: 'Copied!', description: 'File link copied to clipboard.' });
+      toast({ title: '已复制!', description: '文件链接已复制到剪贴板。' });
     });
   };
 
@@ -162,14 +162,14 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete file.');
+        throw new Error(errorData.error || '删除文件失败。');
       }
-      toast({ title: 'Deleted', description: `${fileKey} has been deleted.` });
+      toast({ title: '已删除', description: `${fileKey} 已被删除。` });
       mutate();
     } catch (err) {
       toast({
-        title: 'Delete failed',
-        description: err instanceof Error ? err.message : 'Unknown error',
+        title: '删除失败',
+        description: err instanceof Error ? err.message : '未知错误',
         variant: 'destructive',
       });
     }
@@ -188,19 +188,19 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Bulk delete failed.');
+        throw new Error(errorData.error || '批量删除失败。');
       }
 
       toast({
-        title: 'Delete successful',
-        description: `Successfully deleted ${keysToDelete.length} files.`,
+        title: '删除成功',
+        description: `成功删除 ${keysToDelete.length} 个文件。`,
       });
       setSelectedKeys(new Set());
       mutate(); // Re-fetch the current page data
     } catch (err) {
       toast({
-        title: 'Delete failed',
-        description: err instanceof Error ? err.message : 'Unknown error',
+        title: '删除失败',
+        description: err instanceof Error ? err.message : '未知错误',
         variant: 'destructive',
       });
     }
@@ -233,8 +233,8 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
 
   const breadcrumbParts = currentPrefix.split('/').filter(p => p);
 
-  if (isLoading) return <div className="text-center p-8">Loading files...</div>;
-  if (error) return <div className="text-center p-8 text-destructive">Failed to load</div>;
+  if (isLoading) return <div className="text-center p-8">加载中...</div>;
+  if (error) return <div className="text-center p-8 text-destructive">加载失败</div>;
 
   return (
     <>
@@ -242,7 +242,7 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="#" onClick={() => handleBreadcrumbClick(-1)}>Root</BreadcrumbLink>
+              <BreadcrumbLink href="#" onClick={() => handleBreadcrumbClick(-1)}>根目录</BreadcrumbLink>
             </BreadcrumbItem>
             {breadcrumbParts.map((part, index) => (
               <Fragment key={index}>
@@ -351,11 +351,11 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
           </TableBody>
         </Table>
         {(!directories.length && !files.length) && (
-            <div className="text-center p-8 text-muted-foreground">This folder is empty.</div>
+            <div className="text-center p-8 text-muted-foreground">此文件夹为空</div>
         )}
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Rows per page</p>
+            <p className="text-sm font-medium">每页行数</p>
             <Select
               value={`${pageSize}`}
               onValueChange={(value) => handlePageSizeChange(value)}
