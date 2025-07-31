@@ -31,9 +31,9 @@ export default async function Home() {
             <HomeClientContent />
           ) : (
             <section className="flex flex-col items-center gap-6 mt-16 text-center">
-              <h1 className="text-5xl font-bold">Manage Your Cloudflare R2 Files</h1>
+              <h1 className="text-5xl font-bold">管理您的 Cloudflare R2 文件</h1>
               <p className="text-lg text-muted-foreground max-w-2xl">
-                Upload, view, and manage files in your Cloudflare R2 storage. Sign in to get started.
+                在您的 Cloudflare R2 存储中上传、查看和管理文件。登录以开始使用。
               </p>
             </section>
           )}

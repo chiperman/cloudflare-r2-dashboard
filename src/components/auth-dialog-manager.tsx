@@ -11,6 +11,7 @@ import { LogoutButton } from "./logout-button";
 import { useRouter } from "next/navigation";
 import { ProfileDialog } from "./profile-dialog";
 import { ThemeSwitcher } from "./theme-switcher";
+import GithubIcon from "@/components/icons/github-icon";
 
 export function AuthDialogManager() {
   const [user, setUser] = useState<User | null>(null);
@@ -56,6 +57,14 @@ export function AuthDialogManager() {
         <LogoutButton />
         <ProfileDialog user={user} />
         <ThemeSwitcher />
+        <a
+          href="https://github.com/chiperman/cloudflare-r2-dashboard"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-foreground/80 hover:text-foreground"
+        >
+          <GithubIcon size={16} />
+        </a>
       </div>
     );
   }
