@@ -26,7 +26,7 @@ interface R2File {
   thumbnailUrl: string;
 }
 
-export function UploadForm({ onUploadSuccess }: { onUploadSuccess: (newFiles: R2File[]) => void }) {
+export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess: (newFiles: R2File[]) => void, currentPrefix: string }) {
   const [files, setFiles] = useState<UploadableFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
@@ -88,6 +88,7 @@ export function UploadForm({ onUploadSuccess }: { onUploadSuccess: (newFiles: R2
     return new Promise<R2File>((resolve, reject) => {
       const formData = new FormData();
       formData.append('file', fileToUpload.file);
+      formData.append('directory', currentPrefix);
 
       const xhr = new XMLHttpRequest();
 

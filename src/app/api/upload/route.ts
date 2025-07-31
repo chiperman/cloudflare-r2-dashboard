@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
+    const directory = (formData.get('directory') as string) || '';
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -47,8 +48,9 @@ export async function POST(request: NextRequest) {
       .resize({ width: 200, height: 200, fit: 'cover' })
       .toBuffer();
 
-    // Define keys for R2
-    const originalKey = `originals/${newFileName}`;
+    // Store original file in the specified directory
+    const originalKey = `${directory}${newFileName}`;
+    // ALWAYS store thumbnail in the top-level 'thumbnails/' directory
     const thumbnailKey = `thumbnails/${newFileName}`;
 
     // Upload both original and thumbnail
@@ -61,8 +63,8 @@ export async function POST(request: NextRequest) {
       key: newFileName,
       size: file.size,
       uploadedAt: now.toISOString(),
-      url: `/api/images/originals/${newFileName}`,
-      thumbnailUrl: `/api/images/thumbnails/${newFileName}`,
+      url: `/api/images/${originalKey}`,
+      thumbnailUrl: `/api/images/${thumbnailKey}`,
     };
 
     return NextResponse.json(newFile);

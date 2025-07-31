@@ -8,32 +8,39 @@ import { NextRequest } from 'next/server';
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const continuationToken = searchParams.get('continuationToken') || undefined;
+  const prefix = searchParams.get('prefix') || '';
 
   try {
     const s3Client = getS3Client();
-    const listOriginalsCommand = new ListObjectsV2Command({
+    const listCommand = new ListObjectsV2Command({
       Bucket: process.env.R2_BUCKET_NAME,
-      Prefix: 'originals/',
+      Prefix: prefix,
+      Delimiter: '/',
       ContinuationToken: continuationToken,
       MaxKeys: parseInt(searchParams.get('limit') || '10', 10),
     });
 
-    const { Contents, NextContinuationToken, IsTruncated } = await s3Client.send(
-      listOriginalsCommand
+    const { Contents, CommonPrefixes, NextContinuationToken, IsTruncated } = await s3Client.send(
+      listCommand
     );
 
     const files =
-      Contents?.map((file) => {
+      Contents?.filter(file => file.Key !== prefix && !file.Key?.endsWith('/')).map((file) => {
         const key = file.Key || '';
-        const fileName = key.replace('originals/', '');
+        const fileName = key.substring(prefix.length);
         return {
           key: fileName,
           size: file.Size,
           uploadedAt: file.LastModified,
-          url: `/api/images/originals/${fileName}`,
+          url: `/api/images/${key}`,
           thumbnailUrl: `/api/images/thumbnails/${fileName}`,
         };
       }) || [];
+
+    const directories = CommonPrefixes?.map((commonPrefix) => {
+      const directoryName = commonPrefix.Prefix || '';
+      return directoryName.substring(prefix.length).replace(/\/$/, '');
+    }).filter(dir => dir !== 'thumbnails') || [];
 
     files.sort((a, b) => {
       const dateA = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
@@ -43,6 +50,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       files,
+      directories,
       nextContinuationToken: NextContinuationToken,
       isTruncated: IsTruncated,
     });
@@ -53,48 +61,47 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
     const { keys } = await request.json();
     if (!Array.isArray(keys) || keys.length === 0) {
-      return NextResponse.json({ error: '无效的请求，缺少文件 key' }, { status: 400 });
+      return NextResponse.json({ error: 'An array of file keys is required' }, { status: 400 });
     }
 
     const s3Client = getS3Client();
     const bucketName = process.env.R2_BUCKET_NAME;
 
-    // For each key, add both the original and the thumbnail to the delete list
-    const objectsToDelete = keys.flatMap((key) => [
-      { Key: `originals/${key}` },
-      { Key: `thumbnails/${key}` },
-    ]);
+    const objectsToDelete = keys.flatMap((key) => {
+      const fileName = key.split('/').pop() || '';
+      const thumbnailKey = `thumbnails/${fileName}`;
+      return [{ Key: key }, { Key: thumbnailKey }];
+    });
 
     const deleteCommand = new DeleteObjectsCommand({
       Bucket: bucketName,
       Delete: {
         Objects: objectsToDelete,
-        Quiet: false, // 设置为 false 以便在响应中获取有关已删除对象的信息
+        Quiet: false,
       },
     });
 
     const { Deleted, Errors } = await s3Client.send(deleteCommand);
 
     if (Errors && Errors.length > 0) {
-      // 如果有部分文件删除失败，记录错误并返回详细信息
-      console.error('部分文件删除失败:', Errors);
+      console.error('Failed to delete some files:', Errors);
       return NextResponse.json(
         {
-          error: '部分文件删除失败',
+          error: 'Some files failed to delete',
           details: Errors.map((e) => ({ key: e.Key, message: e.Message })),
         },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ message: '文件批量删除成功', deletedCount: Deleted?.length || 0 });
+    return NextResponse.json({ message: 'Files deleted successfully', deletedCount: Deleted?.length || 0 });
   } catch (error) {
-    console.error('批量删除文件时出错:', error);
-    const errorMessage = error instanceof Error ? error.message : '批量删除文件失败';
+    console.error('Error deleting files:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to delete files';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

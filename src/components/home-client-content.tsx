@@ -14,6 +14,7 @@ interface R2File {
 
 export function HomeClientContent() {
   const [newlyUploadedFiles, setNewlyUploadedFiles] = useState<R2File[]>([]);
+  const [currentPrefix, setCurrentPrefix] = useState('');
 
   const handleUploadSuccess = (newFiles: R2File[]) => {
     setNewlyUploadedFiles(newFiles);
@@ -21,9 +22,9 @@ export function HomeClientContent() {
 
   return (
     <div className="w-full">
-      <UploadForm onUploadSuccess={handleUploadSuccess} />
+      <UploadForm onUploadSuccess={handleUploadSuccess} currentPrefix={currentPrefix} />
       <div className="mt-8">
-        <FileList newlyUploadedFiles={newlyUploadedFiles} />
+        <FileList newlyUploadedFiles={newlyUploadedFiles} currentPrefix={currentPrefix} setCurrentPrefix={setCurrentPrefix} />
       </div>
     </div>
   );

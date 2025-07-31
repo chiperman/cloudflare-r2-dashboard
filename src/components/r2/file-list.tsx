@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Fragment } from 'react';
 import Image from 'next/image';
 import useSWR from 'swr';
 import {
@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Copy, Trash2, Eye } from 'lucide-react';
+import { Copy, Trash2, Eye, Folder as FolderIcon } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import {
   AlertDialog,
@@ -42,6 +42,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
 // Utility function to format bytes
 function formatBytes(bytes: number, decimals = 2) {
@@ -66,37 +74,46 @@ interface R2File {
 
 interface FileListResponse {
   files: R2File[];
+  directories: string[];
   nextContinuationToken?: string;
   isTruncated?: boolean;
 }
 
 interface FileListProps {
   newlyUploadedFiles: R2File[];
+  currentPrefix: string;
+  setCurrentPrefix: (prefix: string) => void;
 }
 
-export function FileList({ newlyUploadedFiles }: FileListProps) {
+export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }: FileListProps) {
   const { toast } = useToast();
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [continuationTokens, setContinuationTokens] = useState<(string | undefined)[]>([undefined]);
 
-  const swrKey = `/api/files?limit=${pageSize}&continuationToken=${continuationTokens[currentPage - 1] || ''}`;
+  const swrKey = `/api/files?limit=${pageSize}&prefix=${currentPrefix}&continuationToken=${continuationTokens[currentPage - 1] || ''}`;
   const { data, error, isLoading, mutate } = useSWR<FileListResponse>(swrKey, fetcher);
 
   const files = useMemo(() => data?.files || [], [data]);
+  const directories = useMemo(() => data?.directories || [], [data]);
   const hasMore = data?.isTruncated || false;
+
+  useEffect(() => {
+    if (newlyUploadedFiles.length > 0) {
+      mutate();
+    }
+  }, [newlyUploadedFiles, mutate]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setContinuationTokens([undefined]);
+  }, [currentPrefix, pageSize]);
 
   useEffect(() => {
     if (data?.nextContinuationToken && continuationTokens.length === currentPage) {
       setContinuationTokens(prev => [...prev, data.nextContinuationToken]);
     }
   }, [data, currentPage, continuationTokens]);
-
-  useEffect(() => {
-    if (newlyUploadedFiles.length > 0) {
-      mutate(); // Re-fetch the current page to show the new files
-    }
-  }, [newlyUploadedFiles, mutate]);
 
   const [previewFile, setPreviewFile] = useState<R2File | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -113,8 +130,19 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
 
   const handlePageSizeChange = (value: string) => {
     setPageSize(parseInt(value, 10));
-    setCurrentPage(1);
-    setContinuationTokens([undefined]);
+  };
+
+  const handleDirectoryClick = (dir: string) => {
+    setCurrentPrefix(`${currentPrefix}${dir}/`);
+  };
+
+  const handleBreadcrumbClick = (index: number) => {
+    if (index === -1) {
+      setCurrentPrefix('');
+      return;
+    }
+    const newPrefix = currentPrefix.split('/').slice(0, index + 1).join('/') + '/';
+    setCurrentPrefix(newPrefix);
   };
 
   const handleCopy = (url: string) => {
@@ -126,13 +154,18 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
 
   const handleDelete = async (fileKey: string) => {
     try {
-      const response = await fetch(`/api/files/${fileKey}`, { method: 'DELETE' });
+      const fullKey = `${currentPrefix}${fileKey}`;
+      const response = await fetch(`/api/files`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keys: [fullKey] }),
+      });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to delete file.');
       }
       toast({ title: 'Deleted', description: `${fileKey} has been deleted.` });
-      mutate(); // Re-fetch the current page data
+      mutate();
     } catch (err) {
       toast({
         title: 'Delete failed',
@@ -143,7 +176,7 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
   };
 
   const handleBulkDelete = async () => {
-    const keysToDelete = Array.from(selectedKeys);
+    const keysToDelete = Array.from(selectedKeys).map(key => `${currentPrefix}${key}`);
     if (keysToDelete.length === 0) return;
 
     try {
@@ -198,13 +231,35 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
     [files, selectedKeys]
   );
 
+  const breadcrumbParts = currentPrefix.split('/').filter(p => p);
+
   if (isLoading) return <div className="text-center p-8">Loading files...</div>;
   if (error) return <div className="text-center p-8 text-destructive">Failed to load</div>;
-  if (!files || files.length === 0)
-    return <div className="text-center p-8 text-muted-foreground">No files</div>;
 
   return (
     <>
+      <div className="mb-4">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="#" onClick={() => handleBreadcrumbClick(-1)}>Root</BreadcrumbLink>
+            </BreadcrumbItem>
+            {breadcrumbParts.map((part, index) => (
+              <Fragment key={index}>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  {index === breadcrumbParts.length - 1 ? (
+                    <BreadcrumbPage>{part}</BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink href="#" onClick={() => handleBreadcrumbClick(index)}>{part}</BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>
+              </Fragment>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+
       <div className="w-full border rounded-lg">
         <Table>
           <TableHeader>
@@ -213,13 +268,25 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
                 <Checkbox checked={isAllSelected} onCheckedChange={handleSelectAll} />
               </TableHead>
               <TableHead className="text-center">预览</TableHead>
-              <TableHead className="text-center">文件名</TableHead>
+              <TableHead>名称</TableHead>
               <TableHead className="text-center">上传时间</TableHead>
               <TableHead className="text-center">文件大小</TableHead>
               <TableHead className="text-center">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
+            {directories.map((dir) => (
+              <TableRow key={dir} onDoubleClick={() => handleDirectoryClick(dir)} className="cursor-pointer">
+                <TableCell></TableCell>
+                <TableCell className="flex justify-center items-center h-[50px]">
+                  <FolderIcon className="w-6 h-6 text-muted-foreground" />
+                </TableCell>
+                <TableCell className="font-medium">{dir}</TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+                <TableCell></TableCell>
+              </TableRow>
+            ))}
             {files.map((file: R2File) => (
               <TableRow key={file.key}>
                 <TableCell className="text-center">
@@ -245,7 +312,7 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
                     </div>
                   </button>
                 </TableCell>
-                <TableCell className="font-medium text-center">{file.key}</TableCell>
+                <TableCell className="font-medium">{file.key}</TableCell>
                 <TableCell className="text-center">
                   {new Date(file.uploadedAt).toLocaleString()}
                 </TableCell>
@@ -283,6 +350,9 @@ export function FileList({ newlyUploadedFiles }: FileListProps) {
             ))}
           </TableBody>
         </Table>
+        {(!directories.length && !files.length) && (
+            <div className="text-center p-8 text-muted-foreground">This folder is empty.</div>
+        )}
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-2">
             <p className="text-sm font-medium">Rows per page</p>
