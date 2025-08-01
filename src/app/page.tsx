@@ -1,40 +1,28 @@
 import { createClient } from '@/lib/supabase/server';
-;
-import { EnvVarWarning } from '@/components/env-var-warning';
-import { AuthButton } from '@/components/auth-button';
-
-import { hasEnvVars } from '@/lib/utils';
-import Link from 'next/link';
-
 import { HomeClientContent } from '@/components/home-client-content';
+import { ThemeAwareImage } from '@/components/theme-aware-image';
+import { Header } from '@/components/header';
 
 export default async function Home() {
-  
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-full flex flex-col gap-12 items-center">
-        <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-          <div className="w-full flex justify-between items-center p-3 px-5 text-sm">
-            <div className="flex gap-5 items-center font-semibold">
-              <Link href={'/'}>Cloudflare R2 Dashboard</Link>
-            </div>
-            <div className="flex items-center gap-3">
-              {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
-            </div>
-          </div>
-        </nav>
+        <Header />
         <div className="flex-1 flex flex-col gap-10 max-w-5xl w-full p-5 items-center">
           {user ? (
             <HomeClientContent />
           ) : (
             <section className="flex flex-col items-center gap-6 mt-16 text-center">
-              <h1 className="text-5xl font-bold">管理您的 Cloudflare R2 文件</h1>
+              <h1 className="text-5xl font-bold">Cloudflare R2 Dashboard</h1>
               <p className="text-lg text-muted-foreground max-w-2xl">
                 在您的 Cloudflare R2 存储中上传、查看和管理文件。登录以开始使用。
               </p>
+              <ThemeAwareImage />
             </section>
           )}
         </div>
@@ -56,4 +44,3 @@ export default async function Home() {
     </main>
   );
 }
-
