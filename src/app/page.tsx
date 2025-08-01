@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { HomeClientContent } from '@/components/home-client-content';
 import { ThemeAwareImage } from '@/components/theme-aware-image';
-import { Header } from '@/components/header';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -12,7 +11,6 @@ export default async function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-full flex flex-col gap-12 items-center">
-        <Header />
         <div className="flex-1 flex flex-col gap-10 max-w-5xl w-full p-5 items-center">
           {user ? (
             <HomeClientContent />

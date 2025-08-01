@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import ProfileSettings from '@/components/profile-settings';
 import type { User } from '@supabase/supabase-js';
 
@@ -19,9 +20,9 @@ export function ProfileDialog({ user }: ProfileDialogProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button className="text-muted-foreground hover:text-foreground transition-colors">
-          <UserIcon className="h-5 w-5" />
-        </button>
+        <Button variant="ghost" size="sm">
+          <UserIcon className="h-5 w-5 text-muted-foreground" />
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

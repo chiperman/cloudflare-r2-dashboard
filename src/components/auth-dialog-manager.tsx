@@ -1,17 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { LoginDialog } from "@/components/login-dialog";
-import { SignUpDialog } from "@/components/sign-up-dialog";
-import { ForgotPasswordDialog } from "@/components/forgot-password-dialog";
-import { Button } from "@/components/ui/button";
-import type { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
-import { LogoutButton } from "./logout-button";
-import { useRouter } from "next/navigation";
-import { ProfileDialog } from "./profile-dialog";
-import { ThemeSwitcher } from "./theme-switcher";
-import GithubIcon from "@/components/icons/github-icon";
+import { useState, useEffect } from 'react';
+import { LoginDialog } from '@/components/login-dialog';
+import { SignUpDialog } from '@/components/sign-up-dialog';
+import { ForgotPasswordDialog } from '@/components/forgot-password-dialog';
+import { Button } from '@/components/ui/button';
+import type { User } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/client';
+import { LogoutButton } from './logout-button';
+import { useRouter } from 'next/navigation';
+import { ProfileDialog } from './profile-dialog';
 
 export function AuthDialogManager() {
   const [user, setUser] = useState<User | null>(null);
@@ -56,15 +54,6 @@ export function AuthDialogManager() {
         Hey, {user.user_metadata.display_name || user.email}!
         <LogoutButton />
         <ProfileDialog user={user} />
-        <ThemeSwitcher />
-        <a
-          href="https://github.com/chiperman/cloudflare-r2-dashboard"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-foreground/80 hover:text-foreground"
-        >
-          <GithubIcon size={16} />
-        </a>
       </div>
     );
   }
@@ -72,10 +61,10 @@ export function AuthDialogManager() {
   return (
     <>
       <div className="flex gap-2">
-        <Button size="sm" variant="outline" onClick={() => setLoginOpen(true)}>
+        <Button size="sm" variant="ghost" onClick={() => setLoginOpen(true)}>
           登录
         </Button>
-        <Button size="sm" variant="default" onClick={() => setSignUpOpen(true)}>
+        <Button size="sm" variant="ghost" onClick={() => setSignUpOpen(true)}>
           注册
         </Button>
       </div>
