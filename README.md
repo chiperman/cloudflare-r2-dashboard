@@ -2,7 +2,6 @@
 
 这是一个基于 Next.js, Tailwind CSS 和 Supabase 构建的现代化、安全且用户友好的 Web 界面，用于管理存储在 Cloudflare R2 存储桶中的文件。项目已配置为通过 Vercel 进行一键式部署。
 
-![Light Mode Screenshot](public/white.png)
 ![Dark Mode Screenshot](public/black.png)
 
 ## ✨ 功能亮点
