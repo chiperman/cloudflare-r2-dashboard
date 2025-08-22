@@ -7,6 +7,7 @@ import { AuthButton } from './auth-button';
 import { hasEnvVars } from '@/lib/utils';
 import { EnvVarWarning } from "./env-var-warning";
 import { Button } from "@/components/ui/button";
+import { MobileMenu } from './mobile-menu';
 
 export function Header() {
   return (
@@ -17,20 +18,25 @@ export function Header() {
         </div>
         <div className="flex items-center gap-3">
           {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
-          <Button
-            variant="ghost"
-            size="sm"
-            asChild
-          >
-            <a
-              href="https://github.com/chiperman/cloudflare-r2-dashboard"
-              target="_blank"
-              rel="noreferrer"
+          {/* Desktop - GitHub icon and Theme switcher */}
+          <div className="hidden md:flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
             >
-              <GithubIcon className="text-muted-foreground" />
-            </a>
-          </Button>
-          <ThemeSwitcher />
+              <a
+                href="https://github.com/chiperman/cloudflare-r2-dashboard"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <GithubIcon className="text-muted-foreground" />
+              </a>
+            </Button>
+            <ThemeSwitcher />
+          </div>
+          {/* Mobile menu */}
+          <MobileMenu />
         </div>
       </div>
     </nav>

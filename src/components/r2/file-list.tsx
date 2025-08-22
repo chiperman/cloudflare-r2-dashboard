@@ -25,7 +25,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -42,7 +50,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -92,7 +100,9 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
   const [currentPage, setCurrentPage] = useState(1);
   const [continuationTokens, setContinuationTokens] = useState<(string | undefined)[]>([undefined]);
 
-  const swrKey = `/api/files?limit=${pageSize}&prefix=${currentPrefix}&continuationToken=${continuationTokens[currentPage - 1] || ''}`;
+  const swrKey = `/api/files?limit=${pageSize}&prefix=${currentPrefix}&continuationToken=${
+    continuationTokens[currentPage - 1] || ''
+  }`;
   const { data, error, isLoading, mutate } = useSWR<FileListResponse>(swrKey, fetcher);
 
   const files = useMemo(() => data?.files || [], [data]);
@@ -112,7 +122,7 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
 
   useEffect(() => {
     if (data?.nextContinuationToken && continuationTokens.length === currentPage) {
-      setContinuationTokens(prev => [...prev, data.nextContinuationToken]);
+      setContinuationTokens((prev) => [...prev, data.nextContinuationToken]);
     }
   }, [data, currentPage, continuationTokens]);
 
@@ -124,12 +134,12 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
 
   const handleNextPage = () => {
     if (hasMore) {
-      setCurrentPage(prev => prev + 1);
+      setCurrentPage((prev) => prev + 1);
     }
   };
 
   const handlePrevPage = () => {
-    setCurrentPage(prev => Math.max(1, prev - 1));
+    setCurrentPage((prev) => Math.max(1, prev - 1));
   };
 
   const handlePageSizeChange = (value: string) => {
@@ -145,7 +155,11 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
       setCurrentPrefix('');
       return;
     }
-    const newPrefix = currentPrefix.split('/').slice(0, index + 1).join('/') + '/';
+    const newPrefix =
+      currentPrefix
+        .split('/')
+        .slice(0, index + 1)
+        .join('/') + '/';
     setCurrentPrefix(newPrefix);
   };
 
@@ -228,7 +242,7 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
   };
 
   const handleBulkDelete = async () => {
-    const keysToDelete = Array.from(selectedKeys).map(key => `${currentPrefix}${key}`);
+    const keysToDelete = Array.from(selectedKeys).map((key) => `${currentPrefix}${key}`);
     if (keysToDelete.length === 0) return;
 
     try {
@@ -283,7 +297,7 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
     [files, selectedKeys]
   );
 
-  const breadcrumbParts = currentPrefix.split('/').filter(p => p);
+  const breadcrumbParts = currentPrefix.split('/').filter((p) => p);
 
   if (isLoading) return <div className="text-center p-8">加载中...</div>;
   if (error) return <div className="text-center p-8 text-destructive">加载失败</div>;
@@ -294,7 +308,9 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="#" onClick={() => handleBreadcrumbClick(-1)}>根目录</BreadcrumbLink>
+              <BreadcrumbLink href="#" onClick={() => handleBreadcrumbClick(-1)}>
+                根目录
+              </BreadcrumbLink>
             </BreadcrumbItem>
             {breadcrumbParts.map((part, index) => (
               <Fragment key={index}>
@@ -303,7 +319,9 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
                   {index === breadcrumbParts.length - 1 ? (
                     <BreadcrumbPage>{part}</BreadcrumbPage>
                   ) : (
-                    <BreadcrumbLink href="#" onClick={() => handleBreadcrumbClick(index)}>{part}</BreadcrumbLink>
+                    <BreadcrumbLink href="#" onClick={() => handleBreadcrumbClick(index)}>
+                      {part}
+                    </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>
               </Fragment>
@@ -325,7 +343,7 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
               <DialogTitle>新建文件夹</DialogTitle>
             </DialogHeader>
             <div className="py-4">
-              <Input 
+              <Input
                 placeholder="请输入文件夹名称"
                 value={newFolderName}
                 onChange={(e) => {
@@ -339,13 +357,17 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
                   }
                 }}
               />
-              {folderNameError && <p className="text-sm text-destructive mt-2">{folderNameError}</p>}
+              {folderNameError && (
+                <p className="text-sm text-destructive mt-2">{folderNameError}</p>
+              )}
             </div>
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="ghost">取消</Button>
               </DialogClose>
-              <Button onClick={handleCreateFolder} disabled={!!folderNameError || !newFolderName}>创建</Button>
+              <Button onClick={handleCreateFolder} disabled={!!folderNameError || !newFolderName}>
+                创建
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -359,7 +381,7 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
                 <Checkbox checked={isAllSelected} onCheckedChange={handleSelectAll} />
               </TableHead>
               <TableHead className="text-center">预览</TableHead>
-              <TableHead>名称</TableHead>
+              <TableHead className="text-center">名称</TableHead>
               <TableHead className="text-center">上传时间</TableHead>
               <TableHead className="text-center">文件大小</TableHead>
               <TableHead className="text-center">操作</TableHead>
@@ -367,12 +389,18 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
           </TableHeader>
           <TableBody>
             {directories.map((dir) => (
-              <TableRow key={dir} onDoubleClick={() => handleDirectoryClick(dir)} className="cursor-pointer">
+              <TableRow
+                key={dir}
+                onDoubleClick={() => handleDirectoryClick(dir)}
+                className="cursor-pointer"
+              >
                 <TableCell></TableCell>
                 <TableCell className="flex justify-center items-center h-[50px]">
                   <FolderIcon className="w-6 h-6 text-muted-foreground" />
                 </TableCell>
-                <TableCell className="font-medium">{dir}</TableCell>
+                <TableCell className="text-center truncate max-w-[150px] md:max-w-full">
+                  {dir}
+                </TableCell>
                 <TableCell></TableCell>
                 <TableCell></TableCell>
                 <TableCell className="text-center">
@@ -386,7 +414,8 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
                       <AlertDialogHeader>
                         <AlertDialogTitle>确认删除文件夹？</AlertDialogTitle>
                         <AlertDialogDescription>
-                          您确定要删除文件夹 &quot;{dir}&quot; 及其包含的所有内容吗？此操作不可恢复。
+                          您确定要删除文件夹 &quot;{dir}&quot;
+                          及其包含的所有内容吗？此操作不可恢复。
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -413,21 +442,32 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
                     className="relative group transition-transform hover:scale-105"
                     onClick={() => setPreviewFile(file)}
                   >
-                    <Image
-                      src={file.thumbnailUrl}
-                      alt={file.key}
-                      width={50}
-                      height={50}
-                      className="rounded-md object-cover h-[50px] w-[50px] cursor-pointer"
-                    />
+                    <div className="relative rounded-md overflow-hidden">
+                      <div className="bg-muted w-[50px] h-[50px] flex items-center justify-center">
+                        <Image
+                          src={file.thumbnailUrl}
+                          alt={file.key}
+                          fill
+                          className="object-cover cursor-pointer"
+                          sizes="50px"
+                        />
+                      </div>
+                    </div>
                     <div className="absolute inset-0 bg-black/50 rounded-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <Eye className="h-6 w-6 text-white" />
                     </div>
                   </button>
                 </TableCell>
-                <TableCell className="font-medium">{file.key}</TableCell>
-                <TableCell className="text-center">
-                  {new Date(file.uploadedAt).toLocaleString()}
+                <TableCell className="text-center truncate max-w-[100px] md:max-w-full">
+                  {file.key}
+                </TableCell>
+                <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
+                  <span className="md:hidden">
+                    {new Date(file.uploadedAt).toLocaleDateString()}
+                  </span>
+                  <span className="hidden md:inline">
+                    {new Date(file.uploadedAt).toLocaleString()}
+                  </span>
                 </TableCell>
                 <TableCell className="text-center">{formatBytes(file.size)}</TableCell>
                 <TableCell>
@@ -463,22 +503,21 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
             ))}
           </TableBody>
         </Table>
-        {(!directories.length && !files.length) && (
-            <div className="text-center p-8 text-muted-foreground">此文件夹为空</div>
+        {!directories.length && !files.length && (
+          <div className="text-center p-8 text-muted-foreground">此文件夹为空</div>
         )}
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-2">
             <p className="text-sm font-medium">每页行数</p>
-            <Select
-              value={`${pageSize}`}
-              onValueChange={(value) => handlePageSizeChange(value)}
-            >
+            <Select value={`${pageSize}`} onValueChange={(value) => handlePageSizeChange(value)}>
               <SelectTrigger className="h-8 w-[70px]">
                 <SelectValue placeholder={`${pageSize}`} />
               </SelectTrigger>
               <SelectContent>
-                {[10, 20, 50].map(size => (
-                  <SelectItem key={size} value={`${size}`}>{size}</SelectItem>
+                {[10, 20, 50].map((size) => (
+                  <SelectItem key={size} value={`${size}`}>
+                    {size}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -487,13 +526,19 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious onClick={handlePrevPage} className={currentPage === 1 ? "pointer-events-none opacity-50" : ""} />
+                  <PaginationPrevious
+                    onClick={handlePrevPage}
+                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                  />
                 </PaginationItem>
                 <PaginationItem>
                   <PaginationLink isActive>{currentPage}</PaginationLink>
                 </PaginationItem>
                 <PaginationItem>
-                  <PaginationNext onClick={handleNextPage} className={!hasMore ? "pointer-events-none opacity-50" : ""} />
+                  <PaginationNext
+                    onClick={handleNextPage}
+                    className={!hasMore ? 'pointer-events-none opacity-50' : ''}
+                  />
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
@@ -534,12 +579,20 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
                 <DialogTitle>{previewFile.key}</DialogTitle>
               </DialogHeader>
               <div className="mt-4 relative w-full h-[70vh]">
-                <Image
-                  src={previewFile.url}
-                  alt={previewFile.key}
-                  fill
-                  className="object-contain"
-                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative w-full h-full max-w-[70vh] max-h-[70vh]">
+                    {/* 加载指示器 */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                    </div>
+                    <Image
+                      src={previewFile.url}
+                      alt={previewFile.key}
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                </div>
               </div>
             </>
           )}
