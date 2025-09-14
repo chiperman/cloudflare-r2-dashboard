@@ -26,7 +26,13 @@ interface R2File {
   thumbnailUrl: string;
 }
 
-export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess: (newFiles: R2File[]) => void, currentPrefix: string }) {
+export function UploadForm({
+  onUploadSuccess,
+  currentPrefix,
+}: {
+  onUploadSuccess: (newFiles: R2File[]) => void;
+  currentPrefix: string;
+}) {
   const [files, setFiles] = useState<UploadableFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
@@ -219,7 +225,7 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
   const pendingFilesCount = files.filter((f) => f.status === 'pending').length;
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full mx-auto">
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
@@ -232,11 +238,7 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
         <input {...getInputProps()} />
         <div className="flex flex-col items-center gap-2 text-muted-foreground">
           <Upload className="w-8 h-8" />
-          {isDragActive ? (
-            <p>松开即可上传</p>
-          ) : (
-            <p>拖拽文件到此处，或点击选择文件</p>
-          )}
+          {isDragActive ? <p>松开即可上传</p> : <p>拖拽文件到此处，或点击选择文件</p>}
           <p className="text-xs">
             (最多 {MAX_FILES} 个文件，每个不超过 {MAX_SIZE_MB}MB; 支持图片和视频文件)
           </p>
