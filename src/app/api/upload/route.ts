@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     let thumbnailUrl: string;
     let thumbnailKey: string | null = null;
 
-    // 只为图片生成缩略图
+    // 根据文件类型选择缩略图
     if (contentType.startsWith('image/')) {
       try {
         const thumbnailBuffer = await sharp(fileBuffer)
@@ -59,11 +59,14 @@ export async function POST(request: NextRequest) {
         thumbnailUrl = `/api/images/${thumbnailKey}`;
       } catch (sharpError) {
         console.error('Thumbnail generation failed:', sharpError);
-        // 如果缩略图生成失败，使用通用图标
-        thumbnailUrl = '/file.svg';
+        // 如果缩略图生成失败，使用通用图片图标
+        thumbnailUrl = '/file.svg'; // Fallback to a generic file icon
       }
+    } else if (contentType.startsWith('video/')) {
+      // 对于视频文件，使用视频图标
+      thumbnailUrl = '/video.svg';
     } else {
-      // 对于非图片文件，使用通用图标
+      // 对于其他所有文件，使用通用文件图标
       thumbnailUrl = '/file.svg';
     }
 
