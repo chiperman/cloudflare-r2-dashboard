@@ -6,6 +6,7 @@
 
 ## ✨ 功能亮点
 
+- **📊 用量概览**: 在首页提供一个仪表盘，实时显示 R2 存储用量、Class A 和 Class B 操作的当月累计次数，帮助您监控资源消耗和成本。
 - **🔒 安全认证**: 通过 Supabase Auth 实现用户登录，只有授权用户才能访问。
 - **📂 文件夹管理**:
     - 支持创建和删除文件夹，实现文件有组织的存储。
@@ -90,6 +91,9 @@ R2_BUCKET_NAME=your-bucket-name
 - **`R2_ACCOUNT_ID`**: 您的 Cloudflare 账户 ID。
 - **`R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY`**: 您创建的 R2 API 令牌的访问密钥。
 - **`R2_BUCKET_NAME`**: 您希望管理的 R2 存储桶的名称。
+- **`CLOUDFLARE_API_TOKEN`**: 用于从 Cloudflare GraphQL API 获取 R2 用量指标。您需要创建一个 API 令牌，并为其分配以下两个权限：
+    - `Account` > `R2` > `Read`
+    - `Account` > `Account Analytics` > `Read`
 
 ### 4. 运行开发服务器
 
