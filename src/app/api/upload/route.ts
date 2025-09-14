@@ -1,4 +1,3 @@
-
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getS3Client } from '@/lib/r2';
 import { NextRequest, NextResponse } from 'next/server';
@@ -29,21 +28,23 @@ export async function POST(request: NextRequest) {
 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const contentType = file.type;
+    const now = new Date(); // Get current time for uploadedAt and filename generation
 
-    // Create a new filename based on YYYYMMDD-HHMMSS-xxxxxx.ext
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const day = now.getDate().toString().padStart(2, '0');
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const lastDotIndex = file.name.lastIndexOf('.');
+    const fileNameWithoutExt =
+      lastDotIndex === -1 ? file.name : file.name.substring(0, lastDotIndex);
+    const fileExtension = lastDotIndex === -1 ? '' : file.name.substring(lastDotIndex + 1);
+
+    const sanitizedFileName = fileNameWithoutExt.replace(/[^\p{L}\p{N}_.-]/gu, '_'); // Allow Unicode letters/numbers, underscore, dot, hyphen
+
     const randomId = nanoid(6); // Generate a 6-character random string
+    const newFileName = `${sanitizedFileName}-${randomId}.${fileExtension}`;
 
-    const fileExtension = file.name.split('.').pop();
-    const newFileName = `${year}${month}${day}-${hours}${minutes}${seconds}-${randomId}.${fileExtension}`;
+    console.log('Generated newFileName:', newFileName);
+    // --- End Filename Generation Logic ---
 
     const originalKey = `${directory}${newFileName}`;
+    console.log('OriginalKey for R2 upload:', originalKey);
     let thumbnailUrl: string;
     let thumbnailKey: string | null = null;
 
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
         const thumbnailBuffer = await sharp(fileBuffer)
           .resize({ width: 200, height: 200, fit: 'cover' })
           .toBuffer();
-        
+
         thumbnailKey = `thumbnails/${newFileName}`;
         await uploadToR2(thumbnailBuffer, thumbnailKey, `image/jpeg`); // 缩略图统一为jpeg
         thumbnailUrl = `/api/images/${thumbnailKey}`;

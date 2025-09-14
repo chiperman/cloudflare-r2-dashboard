@@ -578,7 +578,7 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
         </div>
       )}
 
-      {/* ✅ 图片预览 Dialog */}
+      {/* Preview Dialog */}
       <Dialog open={!!previewFile} onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}>
         <DialogContent className="max-w-4xl h-auto">
           {previewFile && (
@@ -587,20 +587,26 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
                 <DialogTitle>{previewFile.key}</DialogTitle>
               </DialogHeader>
               <div className="mt-4 relative w-full h-[70vh]">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="relative w-full h-full max-w-[70vh] max-h-[70vh]">
-                    {/* 加载指示器 */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                {previewFile.key.toLowerCase().endsWith('.mp4') || previewFile.key.toLowerCase().endsWith('.webm') || previewFile.key.toLowerCase().endsWith('.mov') ? (
+                  <video src={previewFile.url} controls autoPlay className="w-full h-full object-contain">
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative w-full h-full max-w-[70vh] max-h-[70vh]">
+                      {/* Loading indicator */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                      </div>
+                      <Image
+                        src={previewFile.url}
+                        alt={previewFile.key}
+                        fill
+                        className="object-contain"
+                      />
                     </div>
-                    <Image
-                      src={previewFile.url}
-                      alt={previewFile.key}
-                      fill
-                      className="object-contain"
-                    />
                   </div>
-                </div>
+                )}
               </div>
             </>
           )}

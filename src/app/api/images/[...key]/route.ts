@@ -8,7 +8,8 @@ export async function GET(req: NextRequest) {
   const pathParts = req.nextUrl.pathname.split('/');
   const apiIndex = pathParts.findIndex((p) => p === 'api');
   const keyParts = pathParts.slice(apiIndex + 2); // ['a','b','c']
-  const key = keyParts.join('/');
+  const key = decodeURIComponent(keyParts.join('/'));
+  console.log('Requested key (decoded):', key);
 
   try {
     const s3Client = getS3Client(); // 使用 getS3Client 获取实例
