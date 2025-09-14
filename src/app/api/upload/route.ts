@@ -43,28 +43,39 @@ export async function POST(request: NextRequest) {
     const fileExtension = file.name.split('.').pop();
     const newFileName = `${year}${month}${day}-${hours}${minutes}${seconds}-${randomId}.${fileExtension}`;
 
-    // Generate thumbnail
-    const thumbnailBuffer = await sharp(fileBuffer)
-      .resize({ width: 200, height: 200, fit: 'cover' })
-      .toBuffer();
-
-    // Store original file in the specified directory
     const originalKey = `${directory}${newFileName}`;
-    // ALWAYS store thumbnail in the top-level 'thumbnails/' directory
-    const thumbnailKey = `thumbnails/${newFileName}`;
+    let thumbnailUrl: string;
+    let thumbnailKey: string | null = null;
 
-    // Upload both original and thumbnail
-    await Promise.all([
-      uploadToR2(fileBuffer, originalKey, contentType),
-      uploadToR2(thumbnailBuffer, thumbnailKey, `image/${fileExtension}`),
-    ]);
+    // 只为图片生成缩略图
+    if (contentType.startsWith('image/')) {
+      try {
+        const thumbnailBuffer = await sharp(fileBuffer)
+          .resize({ width: 200, height: 200, fit: 'cover' })
+          .toBuffer();
+        
+        thumbnailKey = `thumbnails/${newFileName}`;
+        await uploadToR2(thumbnailBuffer, thumbnailKey, `image/jpeg`); // 缩略图统一为jpeg
+        thumbnailUrl = `/api/images/${thumbnailKey}`;
+      } catch (sharpError) {
+        console.error('Thumbnail generation failed:', sharpError);
+        // 如果缩略图生成失败，使用通用图标
+        thumbnailUrl = '/file.svg';
+      }
+    } else {
+      // 对于非图片文件，使用通用图标
+      thumbnailUrl = '/file.svg';
+    }
+
+    // 上传原始文件
+    await uploadToR2(fileBuffer, originalKey, contentType);
 
     const newFile: R2File = {
       key: newFileName,
       size: file.size,
       uploadedAt: now.toISOString(),
       url: `/api/images/${originalKey}`,
-      thumbnailUrl: `/api/images/${thumbnailKey}`,
+      thumbnailUrl: thumbnailUrl,
     };
 
     return NextResponse.json(newFile);

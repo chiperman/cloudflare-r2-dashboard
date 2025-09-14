@@ -77,6 +77,9 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
       'image/gif': [],
       'image/webp': [],
       'image/svg+xml': [],
+      'video/mp4': [],
+      'video/webm': [],
+      'video/ogg': [],
     },
   });
 
@@ -235,7 +238,7 @@ export function UploadForm({ onUploadSuccess, currentPrefix }: { onUploadSuccess
             <p>拖拽文件到此处，或点击选择文件</p>
           )}
           <p className="text-xs">
-            (最多 {MAX_FILES} 个文件，每个不超过 {MAX_SIZE_MB}MB; 支持 JPEG, PNG, GIF, WEBP, SVG)
+            (最多 {MAX_FILES} 个文件，每个不超过 {MAX_SIZE_MB}MB; 支持图片和视频文件)
           </p>
         </div>
       </div>
