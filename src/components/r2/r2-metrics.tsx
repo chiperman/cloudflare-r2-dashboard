@@ -1,15 +1,15 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import useSWR from 'swr';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DonutChart } from "@/components/ui/donut-chart";
 
 interface Metrics {
   storage: {
@@ -26,6 +26,15 @@ interface Metrics {
   };
 }
 
+const fetcher = async (url: string): Promise<Metrics> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to fetch metrics");
+  }
+  return response.json();
+};
+
 function formatBytes(bytes: number, decimals = 2) {
   if (bytes === 0) return "0 Bytes";
   const k = 1024;
@@ -39,40 +48,21 @@ function MetricCardSkeleton() {
     return (
         <Card>
             <CardHeader>
-                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-5 w-3/4" />
             </CardHeader>
-            <CardContent className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-4/5" />
+            <CardContent className="flex flex-row items-center gap-4 p-6">
+                <Skeleton className="h-16 w-16 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-4 w-20" />
+                </div>
             </CardContent>
         </Card>
     )
 }
 
 export function R2Metrics() {
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchMetrics() {
-      try {
-        setIsLoading(true);
-        const response = await fetch("/api/r2-metrics");
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to fetch metrics");
-        }
-        const data = await response.json();
-        setMetrics(data);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "An unknown error occurred");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchMetrics();
-  }, []);
+  const { data: metrics, error, isLoading } = useSWR<Metrics>("/api/r2-metrics", fetcher);
 
   if (isLoading) {
     return (
@@ -88,7 +78,7 @@ export function R2Metrics() {
     return (
       <div className="text-red-500 border border-red-500/50 bg-red-500/10 rounded-lg p-4">
         <p className="font-bold">无法加载用量数据</p>
-        <p className="text-sm">{error}</p>
+        <p className="text-sm">{error.message}</p>
       </div>
     );
   }
@@ -104,41 +94,38 @@ export function R2Metrics() {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <Card>
-        <CardHeader>
-          <CardTitle>存储用量</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium">存储用量</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Progress value={storagePercentage} />
-            <p className="text-sm text-muted-foreground">
-              {formatBytes(metrics.storage.used)} / {formatBytes(metrics.storage.total)}
-            </p>
+        <CardContent className="flex flex-row items-center gap-4 p-6">
+          <DonutChart value={storagePercentage} size={70} strokeWidth={8} />
+          <div>
+            <p className="text-xl font-bold">{formatBytes(metrics.storage.used)}</p>
+            <p className="text-xs text-muted-foreground">/ {formatBytes(metrics.storage.total)}</p>
           </div>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader>
-          <CardTitle>Class A 操作 (每月)</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium">Class A 操作 (每月)</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Progress value={classAPercentage} />
-            <p className="text-sm text-muted-foreground">
-              {metrics.classA.count.toLocaleString()} / {metrics.classA.total.toLocaleString()}
-            </p>
+        <CardContent className="flex flex-row items-center gap-4 p-6">
+          <DonutChart value={classAPercentage} size={70} strokeWidth={8} />
+           <div>
+            <p className="text-xl font-bold">{metrics.classA.count.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">/ {metrics.classA.total.toLocaleString()}</p>
           </div>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader>
-          <CardTitle>Class B 操作 (每月)</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-medium">Class B 操作 (每月)</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Progress value={classBPercentage} />
-            <p className="text-sm text-muted-foreground">
-              {metrics.classB.count.toLocaleString()} / {metrics.classB.total.toLocaleString()}
-            </p>
+        <CardContent className="flex flex-row items-center gap-4 p-6">
+          <DonutChart value={classBPercentage} size={70} strokeWidth={8} />
+           <div>
+            <p className="text-xl font-bold">{metrics.classB.count.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground">/ {metrics.classB.total.toLocaleString()}</p>
           </div>
         </CardContent>
       </Card>
