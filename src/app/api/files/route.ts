@@ -30,12 +30,24 @@ export async function GET(request: NextRequest) {
         const fileNameOnly = fullKey.split('/').pop() || '';
         const relativeKey = fullKey.substring(prefix.length);
 
+        const fileExtension = fileNameOnly.split('.').pop()?.toLowerCase();
+
+        let thumbnailUrl = '/file.svg'; // Default icon
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        const videoExtensions = ['mp4', 'webm', 'mov', 'ogg'];
+
+        if (fileExtension && imageExtensions.includes(fileExtension)) {
+          thumbnailUrl = `/api/images/thumbnails/${fileNameOnly}`;
+        } else if (fileExtension && videoExtensions.includes(fileExtension)) {
+          thumbnailUrl = '/video.svg';
+        }
+
         return {
           key: relativeKey, // For display in the list
           size: file.Size,
           uploadedAt: file.LastModified,
           url: `/api/images/${fullKey}`, // For full image preview and copy link
-          thumbnailUrl: `/api/images/thumbnails/${fileNameOnly}`, // For thumbnail preview
+          thumbnailUrl: thumbnailUrl, // For thumbnail preview
         };
       }) || [];
 
