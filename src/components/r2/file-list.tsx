@@ -219,12 +219,15 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
   };
 
   const handleDelete = async (fileKey: string) => {
+    const fileToDelete = files.find((f) => f.key === fileKey);
+    if (!fileToDelete) return;
+
     try {
       const fullKey = `${currentPrefix}${fileKey}`;
       const response = await fetch(`/api/files`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keys: [fullKey] }),
+        body: JSON.stringify({ files: [{ key: fullKey, thumbnailUrl: fileToDelete.thumbnailUrl }] }),
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -242,14 +245,19 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
   };
 
   const handleBulkDelete = async () => {
-    const keysToDelete = Array.from(selectedKeys).map((key) => `${currentPrefix}${key}`);
-    if (keysToDelete.length === 0) return;
+    const filesToDelete = files.filter((f) => selectedKeys.has(f.key));
+    if (filesToDelete.length === 0) return;
+
+    const filesPayload = filesToDelete.map((f) => ({
+      key: `${currentPrefix}${f.key}`,
+      thumbnailUrl: f.thumbnailUrl,
+    }));
 
     try {
       const response = await fetch('/api/files', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keys: keysToDelete }),
+        body: JSON.stringify({ files: filesPayload }),
       });
 
       if (!response.ok) {
@@ -259,7 +267,7 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
 
       toast({
         title: '删除成功',
-        description: `成功删除 ${keysToDelete.length} 个文件。`,
+        description: `成功删除 ${filesPayload.length} 个文件。`,
       });
       setSelectedKeys(new Set());
       mutate(); // Re-fetch the current page data

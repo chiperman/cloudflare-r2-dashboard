@@ -65,18 +65,21 @@ export async function GET(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { keys } = await request.json();
-    if (!Array.isArray(keys) || keys.length === 0) {
-      return NextResponse.json({ error: 'An array of file keys is required' }, { status: 400 });
+    const { files } = await request.json();
+    if (!Array.isArray(files) || files.length === 0) {
+      return NextResponse.json({ error: 'An array of file objects is required' }, { status: 400 });
     }
 
     const s3Client = getS3Client();
     const bucketName = process.env.R2_BUCKET_NAME;
 
-    const objectsToDelete = keys.flatMap((key) => {
-      const fileName = key.split('/').pop() || '';
-      const thumbnailKey = `thumbnails/${fileName}`;
-      return [{ Key: key }, { Key: thumbnailKey }];
+    const objectsToDelete = files.flatMap((file) => {
+      const objects = [{ Key: file.key }];
+      if (file.thumbnailUrl && file.thumbnailUrl.includes('/api/images/thumbnails/')) {
+        const thumbnailKey = `thumbnails/${file.key.split('/').pop()}`;
+        objects.push({ Key: thumbnailKey });
+      }
+      return objects;
     });
 
     const deleteCommand = new DeleteObjectsCommand({
@@ -90,14 +93,18 @@ export async function DELETE(request: NextRequest) {
     const { Deleted, Errors } = await s3Client.send(deleteCommand);
 
     if (Errors && Errors.length > 0) {
-      console.error('Failed to delete some files:', Errors);
-      return NextResponse.json(
-        {
-          error: 'Some files failed to delete',
-          details: Errors.map((e) => ({ key: e.Key, message: e.Message })),
-        },
-        { status: 500 }
-      );
+      // Filter out errors for keys that were not found, as this is expected for non-image files
+      const realErrors = Errors.filter(e => e.Code !== 'NoSuchKey');
+      if (realErrors.length > 0) {
+        console.error('Failed to delete some files:', realErrors);
+        return NextResponse.json(
+          {
+            error: 'Some files failed to delete',
+            details: realErrors.map((e) => ({ key: e.Key, message: e.Message })),
+          },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({ message: 'Files deleted successfully', deletedCount: Deleted?.length || 0 });
