@@ -29,18 +29,17 @@
 
 ## 🛠️ 技术栈
 
-| 分类            | 技术/服务                                              |
-| --------------- | ------------------------------------------------------ |
-| **框架**        | [Next.js](https://nextjs.org/) 14 (App Router)         |
-| **语言**        | [TypeScript](https://www.typescriptlang.org/)          |
-| **样式**        | [Tailwind CSS](https://tailwindcss.com/)               |
-| **UI 组件**     | [shadcn/ui](https://ui.shadcn.com/)                    |
-| **数据请求**    | [SWR](https://swr.vercel.app/)                         |
-| **认证/数据库** | [Supabase](https://supabase.com/) (Auth & Postgres DB) |
-
-| **对象存储** | [Cloudflare R2](https://www.cloudflare.com/products/r2/) |
-| **云服务接口** | [AWS SDK for JavaScript v3](https://aws.amazon.com/sdk-for-javascript/) |
-| **部署平台** | [Vercel](https://vercel.com/) |
+| 分类            | 技术/服务                                                               |
+| --------------- | ----------------------------------------------------------------------- |
+| **框架**        | [Next.js](https://nextjs.org/) 14 (App Router)                          |
+| **语言**        | [TypeScript](https://www.typescriptlang.org/)                           |
+| **样式**        | [Tailwind CSS](https://tailwindcss.com/)                                |
+| **UI 组件**     | [shadcn/ui](https://ui.shadcn.com/)                                     |
+| **数据请求**    | [SWR](https://swr.vercel.app/)                                          |
+| **认证/数据库** | [Supabase](https://supabase.com/) (Auth & Postgres DB)                  |
+| **对象存储**    | [Cloudflare R2](https://www.cloudflare.com/products/r2/)                |
+| **云服务接口**  | [AWS SDK for JavaScript v3](https://aws.amazon.com/sdk-for-javascript/) |
+| **部署平台**    | [Vercel](https://vercel.com/)                                           |
 
 ## 🚀 本地开发指南
 
@@ -107,7 +106,6 @@ R2_BUCKET_NAME=your-bucket-name
 3.  点击 **+ New query**。
 4.  打开项目中的 `supabase/schema.sql` 文件，将其中的 SQL 内容完整复制并粘贴到编辑器中。
 5.  点击 **RUN** 按钮执行脚本。这将创建 `files` 表并设置好行级安全策略。
-6.  重复步骤 3-5，但这次打开 `supabase/profiles_trigger.sql` 文件并运行其内容。这将创建 `profiles` 表和相关的触发器，用于同步用户数据。
 
 ### 5. 运行开发服务器
 
