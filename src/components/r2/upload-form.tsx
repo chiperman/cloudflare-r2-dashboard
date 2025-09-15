@@ -5,6 +5,7 @@ import { useDropzone, FileRejection } from 'react-dropzone';
 import { Upload, File as FileIcon, X, CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
+import { R2File } from '@/lib/types';
 
 const MAX_SIZE_MB = 30;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -18,13 +19,6 @@ interface UploadableFile {
   error?: string;
 }
 
-interface R2File {
-  key: string;
-  size: number;
-  uploadedAt: string;
-  url: string;
-  thumbnailUrl: string;
-}
 
 export function UploadForm({
   onUploadSuccess,

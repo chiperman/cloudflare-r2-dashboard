@@ -60,6 +60,9 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 
+import type { User } from '@supabase/supabase-js';
+import { R2File } from '@/lib/types';
+
 // Utility function to format bytes
 function formatBytes(bytes: number, decimals = 2) {
   if (bytes === 0) return '0 Bytes';
@@ -73,13 +76,7 @@ function formatBytes(bytes: number, decimals = 2) {
 // SWR fetcher
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-interface R2File {
-  key: string;
-  size: number;
-  uploadedAt: string;
-  url: string;
-  thumbnailUrl: string;
-}
+
 
 interface FileListResponse {
   files: R2File[];
@@ -89,20 +86,18 @@ interface FileListResponse {
 }
 
 interface FileListProps {
+  user: User | null;
   newlyUploadedFiles: R2File[];
   currentPrefix: string;
   setCurrentPrefix: (prefix: string) => void;
 }
 
-export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }: FileListProps) {
+export function FileList({ user, newlyUploadedFiles, currentPrefix, setCurrentPrefix }: FileListProps) {
   const { toast } = useToast();
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [continuationTokens, setContinuationTokens] = useState<(string | undefined)[]>([undefined]);
 
-  const swrKey = `/api/files?limit=${pageSize}&prefix=${currentPrefix}&continuationToken=${
-    continuationTokens[currentPage - 1] || ''
-  }`;
+  const swrKey = `/api/files?limit=${pageSize}&prefix=${currentPrefix}&page=${currentPage}`;
   const { data, error, isLoading, mutate } = useSWR<FileListResponse>(swrKey, fetcher);
 
   const files = useMemo(() => data?.files || [], [data]);
@@ -111,20 +106,17 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
 
   useEffect(() => {
     if (newlyUploadedFiles.length > 0) {
+      // 当有新文件上传时，跳转回第一页并刷新
+      setCurrentPage(1);
       mutate();
     }
   }, [newlyUploadedFiles, mutate]);
 
   useEffect(() => {
+    // 当文件夹或页面大小变化时，重置为第一页
     setCurrentPage(1);
-    setContinuationTokens([undefined]);
   }, [currentPrefix, pageSize]);
 
-  useEffect(() => {
-    if (data?.nextContinuationToken && continuationTokens.length === currentPage) {
-      setContinuationTokens((prev) => [...prev, data.nextContinuationToken]);
-    }
-  }, [data, currentPage, continuationTokens]);
 
   const [previewFile, setPreviewFile] = useState<R2File | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -390,6 +382,7 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
               </TableHead>
               <TableHead className="text-center">预览</TableHead>
               <TableHead className="text-center">名称</TableHead>
+              <TableHead className="text-center">上传者</TableHead>
               <TableHead className="text-center">上传时间</TableHead>
               <TableHead className="text-center">文件大小</TableHead>
               <TableHead className="text-center">操作</TableHead>
@@ -409,12 +402,13 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
                 <TableCell className="text-center truncate max-w-[150px] md:max-w-full">
                   {dir}
                 </TableCell>
-                <TableCell></TableCell>
-                <TableCell></TableCell>
+                <TableCell></TableCell> {/* Placeholder for Uploader */}
+                <TableCell></TableCell> {/* Placeholder for Uploaded At */}
+                <TableCell></TableCell> {/* Placeholder for File Size */}
                 <TableCell className="text-center">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="destructive" size="sm">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -469,6 +463,9 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
                 <TableCell className="text-center truncate max-w-[100px] md:max-w-full">
                   {file.key}
                 </TableCell>
+                <TableCell className="text-center truncate max-w-[100px] md:max-w-full">
+                  {file.uploader}
+                </TableCell>
                 <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
                   <span className="md:hidden">
                     {new Date(file.uploadedAt).toLocaleDateString()}
@@ -486,7 +483,12 @@ export function FileList({ newlyUploadedFiles, currentPrefix, setCurrentPrefix }
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          disabled={Boolean(!file.user_id || (user && user.id !== file.user_id))}
+                          title={(!file.user_id || (user && user.id !== file.user_id)) ? '你没有删除此文件的权限' : '删除文件'}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
