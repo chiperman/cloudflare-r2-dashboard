@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { nanoid } from 'nanoid';
 
+import { createServerClient } from '@supabase/ssr';
+
 // Helper function to upload a buffer to R2
 async function uploadToR2(buffer: Buffer, key: string, contentType: string) {
   const s3Client = getS3Client(); // 使用 getS3Client 获取实例
@@ -17,7 +19,21 @@ async function uploadToR2(buffer: Buffer, key: string, contentType: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+      },
+    }
+  );
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const directory = (formData.get('directory') as string) || '';
@@ -73,6 +89,26 @@ export async function POST(request: NextRequest) {
 
     // 上传原始文件
     await uploadToR2(fileBuffer, originalKey, contentType);
+
+    // 将元数据写入 Supabase 数据库
+    const { error: dbError } = await supabase.from('files').insert({
+      key: originalKey,
+      name: newFileName,
+      uploaded_at: now.toISOString(),
+      size: file.size,
+      content_type: contentType,
+      user_id: user.id,
+    });
+
+    if (dbError) {
+      console.error('Failed to save file metadata to DB:', dbError);
+      // 如果数据库插入失败，可以考虑删除已上传到 R2 的文件以保持同步
+      // (此部分逻辑暂未实现)
+      return NextResponse.json(
+        { error: 'Failed to save file metadata.', db_error: dbError.message },
+        { status: 500 }
+      );
+    }
 
     const newFile: R2File = {
       key: newFileName,
