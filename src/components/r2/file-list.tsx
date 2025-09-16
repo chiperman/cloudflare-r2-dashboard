@@ -12,8 +12,24 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Copy, Trash2, Eye, Folder as FolderIcon, FolderPlus } from 'lucide-react';
+import {
+  Copy,
+  Trash2,
+  Eye,
+  Folder as FolderIcon,
+  FolderPlus,
+  Download,
+  MoreHorizontal,
+} from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,8 +92,6 @@ function formatBytes(bytes: number, decimals = 2) {
 // SWR fetcher
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-
-
 interface FileListResponse {
   files: R2File[];
   directories: string[];
@@ -92,7 +106,12 @@ interface FileListProps {
   setCurrentPrefix: (prefix: string) => void;
 }
 
-export function FileList({ user, newlyUploadedFiles, currentPrefix, setCurrentPrefix }: FileListProps) {
+export function FileList({
+  user,
+  newlyUploadedFiles,
+  currentPrefix,
+  setCurrentPrefix,
+}: FileListProps) {
   const { toast } = useToast();
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -116,7 +135,6 @@ export function FileList({ user, newlyUploadedFiles, currentPrefix, setCurrentPr
     // 当文件夹或页面大小变化时，重置为第一页
     setCurrentPage(1);
   }, [currentPrefix, pageSize]);
-
 
   const [previewFile, setPreviewFile] = useState<R2File | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -219,7 +237,9 @@ export function FileList({ user, newlyUploadedFiles, currentPrefix, setCurrentPr
       const response = await fetch(`/api/files`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files: [{ key: fullKey, thumbnailUrl: fileToDelete.thumbnailUrl }] }),
+        body: JSON.stringify({
+          files: [{ key: fullKey, thumbnailUrl: fileToDelete.thumbnailUrl }],
+        }),
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -475,39 +495,62 @@ export function FileList({ user, newlyUploadedFiles, currentPrefix, setCurrentPr
                   </span>
                 </TableCell>
                 <TableCell className="text-center">{formatBytes(file.size)}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2 justify-center">
-                    <Button variant="outline" size="sm" onClick={() => handleCopy(file.url)}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          disabled={Boolean(!file.user_id || (user && user.id !== file.user_id))}
-                          title={(!file.user_id || (user && user.id !== file.user_id)) ? '你没有删除此文件的权限' : '删除文件'}
-                        >
-                          <Trash2 className="h-4 w-4" />
+                <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
+                  <AlertDialog>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>确认删除？</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            确认删除 {file.key}？此操作不可恢复。
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>取消</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(file.key)}>
-                            删除
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>操作</DropdownMenuLabel>
+                        <DropdownMenuItem asChild className="cursor-pointer">
+                          <a href={file.url} download={file.key}>
+                            <Download className="mr-2 h-4 w-4" />
+                            <span>下载</span>
+                          </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={() => handleCopy(file.url)}
+                          className="cursor-pointer"
+                        >
+                          <Copy className="mr-2 h-4 w-4" />
+                          <span>复制链接</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive cursor-pointer"
+                            disabled={Boolean(!file.user_id || (user && user.id !== file.user_id))}
+                            title={
+                              !file.user_id || (user && user.id !== file.user_id)
+                                ? '你没有删除此文件的权限'
+                                : '删除文件'
+                            }
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            <span>删除</span>
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>确认删除？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          确认删除 {file.key}？此操作不可恢复。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(file.key)}>
+                          删除
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </TableCell>
               </TableRow>
             ))}
@@ -589,8 +632,15 @@ export function FileList({ user, newlyUploadedFiles, currentPrefix, setCurrentPr
                 <DialogTitle>{previewFile.key}</DialogTitle>
               </DialogHeader>
               <div className="mt-4 relative w-full h-[70vh]">
-                {previewFile.key.toLowerCase().endsWith('.mp4') || previewFile.key.toLowerCase().endsWith('.webm') || previewFile.key.toLowerCase().endsWith('.mov') ? (
-                  <video src={previewFile.url} controls autoPlay className="w-full h-full object-contain">
+                {previewFile.key.toLowerCase().endsWith('.mp4') ||
+                previewFile.key.toLowerCase().endsWith('.webm') ||
+                previewFile.key.toLowerCase().endsWith('.mov') ? (
+                  <video
+                    src={previewFile.url}
+                    controls
+                    autoPlay
+                    className="w-full h-full object-contain"
+                  >
                     Your browser does not support the video tag.
                   </video>
                 ) : (
