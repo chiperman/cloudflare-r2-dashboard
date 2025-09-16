@@ -36,8 +36,8 @@ export function HomeClientContent() {
 
   return (
     <div className="w-full space-y-8">
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="item-1">
+      <Accordion type="single" collapsible className="w-full" defaultValue="r2-metrics">
+        <AccordionItem value="r2-metrics">
           <AccordionTrigger>
             <h2 className="text-2xl font-bold tracking-tight">用量概览</h2>
           </AccordionTrigger>
