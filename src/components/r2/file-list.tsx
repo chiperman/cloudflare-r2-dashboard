@@ -397,7 +397,7 @@ export function FileList({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50px] text-center">
+              <TableHead className="text-center">
                 <Checkbox checked={isAllSelected} onCheckedChange={handleSelectAll} />
               </TableHead>
               <TableHead className="text-center">预览</TableHead>
@@ -413,11 +413,13 @@ export function FileList({
               <TableRow
                 key={dir}
                 onDoubleClick={() => handleDirectoryClick(dir)}
-                className="cursor-pointer"
+                className="cursor-pointer h-[50px]"
               >
                 <TableCell></TableCell>
-                <TableCell className="flex justify-center items-center h-[50px]">
-                  <FolderIcon className="w-6 h-6 text-muted-foreground" />
+                <TableCell className="flex items-center justify-center">
+                  <div className="w-[50px] h-[50px] flex items-center justify-center">
+                    <FolderIcon className="w-6 h-6 text-muted-foreground" />
+                  </div>
                 </TableCell>
                 <TableCell className="text-center truncate max-w-[150px] md:max-w-full">
                   {dir}
@@ -452,14 +454,14 @@ export function FileList({
               </TableRow>
             ))}
             {files.map((file: R2File) => (
-              <TableRow key={file.key}>
+              <TableRow key={file.key} className="h-[50px]">
                 <TableCell className="text-center">
                   <Checkbox
                     checked={selectedKeys.has(file.key)}
                     onCheckedChange={() => handleSelect(file.key)}
                   />
                 </TableCell>
-                <TableCell className="flex justify-center">
+                <TableCell className="flex items-center justify-center">
                   <button
                     className="relative group transition-transform hover:scale-105"
                     onClick={() => setPreviewFile(file)}
@@ -480,10 +482,10 @@ export function FileList({
                     </div>
                   </button>
                 </TableCell>
-                <TableCell className="text-center truncate max-w-[100px] md:max-w-full">
+                <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
                   {file.key}
                 </TableCell>
-                <TableCell className="text-center truncate max-w-[100px] md:max-w-full">
+                <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
                   {file.uploader}
                 </TableCell>
                 <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
@@ -494,7 +496,9 @@ export function FileList({
                     {new Date(file.uploadedAt).toLocaleString()}
                   </span>
                 </TableCell>
-                <TableCell className="text-center">{formatBytes(file.size)}</TableCell>
+                <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
+                  {formatBytes(file.size)}
+                </TableCell>
                 <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
                   <AlertDialog>
                     <DropdownMenu>
