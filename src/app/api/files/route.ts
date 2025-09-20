@@ -5,6 +5,8 @@ import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
+export const runtime = 'edge';
+
 export async function GET(request: NextRequest) {
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,20 +27,32 @@ export async function GET(request: NextRequest) {
   const rangeTo = rangeFrom + limit - 1;
 
   try {
-    // 1. 获取分页后的文件数据 (只包含 user_id，不直接关联 profiles)
-    const { data: filesData, error: filesError, count } = await supabase
-      .from('files')
-      .select('*', { count: 'exact' })
-      .like('key', `${prefix}%`)
-      .not('key', 'like', `${prefix}%/%`)
-      .order('uploaded_at', { ascending: false })
-      .range(rangeFrom, rangeTo);
+    // --- 优化点: 并行执行文件查询和文件夹查询 ---
+    const [filesResult, directoriesResult] = await Promise.all([
+      // 1. 高效获取文件列表 (带分页)
+      supabase
+        .from('files')
+        .select('*', { count: 'exact' })
+        .like('key', `${prefix}%`)
+        .not('key', 'like', `${prefix}%/%`)
+        .order('uploaded_at', { ascending: false })
+        .range(rangeFrom, rangeTo),
+      
+      // 2. 调用数据库函数高效获取文件夹列表
+      supabase.rpc('get_directories_in_prefix', { p_prefix: prefix })
+    ]);
 
+    const { data: filesData, error: filesError, count } = filesResult;
     if (filesError) throw filesError;
 
-    // 2. 提取唯一的 user_id 并查询 profiles 表
-    const uniqueUserIds = [...new Set(filesData.map(file => file.user_id).filter(Boolean))];
+    const { data: directoriesData, error: directoriesError } = directoriesResult;
+    if (directoriesError) throw directoriesError;
+    
+    // 从 rpc 调用结果中提取文件夹名称数组
+    const directories = directoriesData ? directoriesData.map((d: { directory_name: string }) => d.directory_name) : [];
 
+    // --- 后续逻辑保持不变 (获取用户 Profile 等) ---
+    const uniqueUserIds = [...new Set(filesData.map(file => file.user_id).filter(Boolean))];
     let profilesMap = new Map();
     if (uniqueUserIds.length > 0) {
       const { data: profilesData, error: profilesError } = await supabase
@@ -48,37 +62,14 @@ export async function GET(request: NextRequest) {
 
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
-        // 即使获取 profiles 失败，也继续执行，只是 uploader 会显示未知
       } else {
-        profilesData.forEach(profile => {
-          profilesMap.set(profile.id, profile);
-        });
+        profilesData.forEach(profile => profilesMap.set(profile.id, profile));
       }
     }
 
-    // --- 优化点 2: 单独、高效地获取文件夹 ---
-    const { data: allKeysInPrefix, error: allKeysError } = await supabase
-      .from('files')
-      .select('key')
-      .like('key', `${prefix}%/%`);
-
-    if (allKeysError) throw allKeysError;
-
-    const directorySet = new Set<string>();
-    if (allKeysInPrefix) {
-      allKeysInPrefix.forEach(item => {
-        const suffix = item.key.substring(prefix.length);
-        const directory = suffix.split('/')[0];
-        directorySet.add(directory);
-      });
-    }
-    const directories = Array.from(directorySet);
-
-    // --- 数据格式化 ---
     const files = filesData.map((file) => {
       const fileNameOnly = file.name;
       const fileExtension = fileNameOnly.split('.').pop()?.toLowerCase();
-
       let thumbnailUrl = '/file.svg';
       const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
       const videoExtensions = ['mp4', 'webm', 'mov', 'ogg'];

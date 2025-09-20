@@ -20,6 +20,7 @@ import {
   FolderPlus,
   Download,
   MoreHorizontal,
+  RefreshCw,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -141,6 +142,7 @@ export function FileList({
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [folderNameError, setFolderNameError] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleNextPage = () => {
     if (hasMore) {
@@ -154,6 +156,16 @@ export function FileList({
 
   const handlePageSizeChange = (value: string) => {
     setPageSize(parseInt(value, 10));
+  };
+
+  const handleRefresh = () => {
+    if (isRefreshing) return;
+
+    setIsRefreshing(true);
+    mutate();
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 2000); // 2-second throttle
   };
 
   const handleDirectoryClick = (dir: string) => {
@@ -350,7 +362,7 @@ export function FileList({
         </Breadcrumb>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
           <DialogTrigger asChild>
             <Button variant="outline">
@@ -391,6 +403,9 @@ export function FileList({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
 
       <div className="w-full border rounded-lg">
