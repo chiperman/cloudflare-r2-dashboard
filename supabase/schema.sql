@@ -59,3 +59,48 @@ ON public.files
 FOR DELETE
 TO authenticated
 USING (auth.uid() = user_id);
+
+-- 5. 性能优化：数据库函数与索引 (2025-09-21 添加)
+--
+-- 以下部分包含了用于优化文件和文件夹列表查询的数据库对象。
+--
+
+-- 5.1 创建数据库函数 `get_directories_in_prefix`
+-- 目的：将文件夹的计算逻辑从 Node.js 下推到数据库，利用 PostgreSQL 的原生能力高效完成。
+
+-- 如果函数已存在，则删除以确保全新创建
+DROP FUNCTION IF EXISTS get_directories_in_prefix(TEXT);
+
+-- 创建函数
+CREATE OR REPLACE FUNCTION get_directories_in_prefix(p_prefix TEXT)
+-- 此函数返回一个名为 "directory_name" 的单列表
+RETURNS TABLE(directory_name TEXT) AS $
+BEGIN
+    -- 这是函数的核心逻辑
+    RETURN QUERY
+    SELECT DISTINCT
+        -- 1. 获取前缀之后的部分
+        --    示例: 如果 key 是 'a/b/c.txt' 且 p_prefix 是 'a/'，则子字符串是 'b/c.txt'
+        -- 2. 按 '/' 分割子字符串并获取第一部分
+        --    示例: split_part('b/c.txt', '/', 1) 返回 'b'
+        split_part(substring(files.key from (length(p_prefix) + 1)), '/', 1)
+    FROM
+        files
+    WHERE
+        -- 查找所有嵌套在给定前缀下的路径
+        files.key LIKE p_prefix || '%/%';
+
+END;
+$ LANGUAGE plpgsql;
+
+
+-- 5.2 (推荐) 添加额外的数据库索引
+-- 目的：为 `files` 表中经常用于查询和排序的字段添加索引，大幅提升查询性能。
+
+-- 为 `key` 字段创建一个 B-tree 索引，以加速 LIKE 查询
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_files_key ON files USING btree (key);
+
+-- 如果经常需要按上传时间排序，可以创建一个复合索引
+-- 注意: Supabase 默认可能已经在主键或外键上创建了一些索引，请先检查。
+-- 这个复合索引可以同时优化 `key` 的筛选和 `uploaded_at` 的排序
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_files_key_uploaded_at ON files (key, uploaded_at);

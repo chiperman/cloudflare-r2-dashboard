@@ -21,6 +21,8 @@ import {
   Download,
   MoreHorizontal,
   RefreshCw,
+  Search,
+  ChevronDown,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -116,8 +118,11 @@ export function FileList({
   const { toast } = useToast();
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [searchScope, setSearchScope] = useState('current'); // 'current' or 'global'
 
-  const swrKey = `/api/files?limit=${pageSize}&prefix=${currentPrefix}&page=${currentPage}`;
+  const swrKey = `/api/files?limit=${pageSize}&prefix=${searchScope === 'global' ? '' : currentPrefix}&page=${currentPage}&search=${debouncedSearchTerm}`;
   const { data, error, isLoading, mutate } = useSWR<FileListResponse>(swrKey, fetcher);
 
   const files = useMemo(() => data?.files || [], [data]);
@@ -363,49 +368,89 @@ export function FileList({
       </div>
 
       <div className="mb-4 flex items-center justify-between">
-        <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <FolderPlus className="mr-2 h-4 w-4" />
-              新建文件夹
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>新建文件夹</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <Input
-                placeholder="请输入文件夹名称"
-                value={newFolderName}
-                onChange={(e) => {
-                  const name = e.target.value;
-                  setNewFolderName(name);
-                  const safeNameRegex = /^[a-zA-Z0-9_-]*$/;
-                  if (!safeNameRegex.test(name)) {
-                    setFolderNameError('名称只能包含字母、数字、- 和 _');
-                  } else {
-                    setFolderNameError('');
-                  }
-                }}
-              />
-              {folderNameError && (
-                <p className="text-sm text-destructive mt-2">{folderNameError}</p>
-              )}
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="ghost">取消</Button>
-              </DialogClose>
-              <Button onClick={handleCreateFolder} disabled={!!folderNameError || !newFolderName}>
-                创建
+        <div>
+          <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <FolderPlus className="mr-2 h-4 w-4" />
+                新建文件夹
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-        </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>新建文件夹</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <Input
+                  placeholder="请输入文件夹名称"
+                  value={newFolderName}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setNewFolderName(name);
+                    const safeNameRegex = /^[a-zA-Z0-9_-]*$/;
+                    if (!safeNameRegex.test(name)) {
+                      setFolderNameError('名称只能包含字母、数字、- 和 _');
+                    } else {
+                      setFolderNameError('');
+                    }
+                  }}
+                />
+                {folderNameError && (
+                  <p className="text-sm text-destructive mt-2">{folderNameError}</p>
+                )}
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="ghost">取消</Button>
+                </DialogClose>
+                <Button onClick={handleCreateFolder} disabled={!!folderNameError || !newFolderName}>
+                  创建
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <div className="relative w-full max-w-sm flex items-center border border-input rounded-md focus-within:border-primary">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder={searchScope === 'current' ? '搜索当前文件夹...' : '全局搜索...'}
+              className="pl-10 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setDebouncedSearchTerm(searchTerm);
+                }
+              }}
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="rounded-l-none">
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem 
+                  onSelect={() => setSearchScope('current')}
+                  className={searchScope === 'current' ? 'bg-accent' : ''}
+                >
+                  当前文件夹
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onSelect={() => setSearchScope('global')}
+                  className={searchScope === 'global' ? 'bg-accent' : ''}
+                >
+                  全局
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
       <div className="w-full border rounded-lg">

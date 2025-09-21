@@ -22,22 +22,30 @@ export async function GET(request: NextRequest) {
   const prefix = searchParams.get('prefix') || '';
   const limit = parseInt(searchParams.get('limit') || '10', 10);
   const page = parseInt(searchParams.get('page') || '1', 10);
+  const search = searchParams.get('search') || '';
 
   const rangeFrom = (page - 1) * limit;
   const rangeTo = rangeFrom + limit - 1;
 
   try {
+    // Base query for files
+    let filesQuery = supabase
+      .from('files')
+      .select('*', { count: 'exact' })
+      .like('key', `${prefix}%`)
+      .not('key', 'like', `${prefix}%/%`);
+
+    // Add search condition if a search term is provided
+    if (search) {
+      filesQuery = filesQuery.like('name', `%${search}%`);
+    }
+
+    // Add order and range
+    filesQuery = filesQuery.order('uploaded_at', { ascending: false }).range(rangeFrom, rangeTo);
+
     // --- 优化点: 并行执行文件查询和文件夹查询 ---
     const [filesResult, directoriesResult] = await Promise.all([
-      // 1. 高效获取文件列表 (带分页)
-      supabase
-        .from('files')
-        .select('*', { count: 'exact' })
-        .like('key', `${prefix}%`)
-        .not('key', 'like', `${prefix}%/%`)
-        .order('uploaded_at', { ascending: false })
-        .range(rangeFrom, rangeTo),
-      
+      filesQuery, // 1. Execute the constructed file query
       // 2. 调用数据库函数高效获取文件夹列表
       supabase.rpc('get_directories_in_prefix', { p_prefix: prefix })
     ]);
