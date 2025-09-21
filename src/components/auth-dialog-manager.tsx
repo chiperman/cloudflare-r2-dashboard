@@ -51,7 +51,7 @@ export function AuthDialogManager() {
   if (user) {
     return (
       <div className="flex items-center gap-4">
-        {user.user_metadata.display_name || user.email}!
+        {user.user_metadata.display_name || user.email}
         <LogoutButton />
         <ProfileDialog user={user} />
       </div>

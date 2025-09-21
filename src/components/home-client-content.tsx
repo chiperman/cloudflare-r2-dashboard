@@ -20,6 +20,7 @@ export function HomeClientContent() {
   const [newlyUploadedFiles, setNewlyUploadedFiles] = useState<R2File[]>([]);
   const [currentPrefix, setCurrentPrefix] = useState('');
   const [user, setUser] = useState<User | null>(null);
+  const [accordionDefaultValue, setAccordionDefaultValue] = useState('');
   const supabase = createClient();
 
   useEffect(() => {
@@ -28,6 +29,20 @@ export function HomeClientContent() {
       setUser(user);
     };
     getUser();
+
+    const checkScreenSize = () => {
+      // 768px is the default for `md` in Tailwind
+      if (window.innerWidth >= 768) {
+        setAccordionDefaultValue('r2-metrics');
+      } else {
+        setAccordionDefaultValue('');
+      }
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, [supabase.auth]);
 
   const handleUploadSuccess = (newFiles: R2File[]) => {
@@ -36,7 +51,7 @@ export function HomeClientContent() {
 
   return (
     <div className="w-full space-y-8">
-      <Accordion type="single" collapsible className="w-full" defaultValue="r2-metrics">
+      <Accordion type="single" collapsible className="w-full" value={accordionDefaultValue} onValueChange={setAccordionDefaultValue}>
         <AccordionItem value="r2-metrics">
           <AccordionTrigger>
             <h2 className="text-2xl font-bold tracking-tight">用量概览</h2>
