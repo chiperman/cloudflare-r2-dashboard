@@ -592,7 +592,7 @@ export function FileList({
               </TableHead>
               <TableHead className="text-center">预览</TableHead>
               <TableHead className="text-center">名称</TableHead>
-              <TableHead className="text-center">上传者</TableHead>
+              <TableHead className="text-center">用户</TableHead>
               <TableHead className="text-center">上传时间</TableHead>
               <TableHead className="text-center">文件大小</TableHead>
               <TableHead className="text-center">操作</TableHead>
