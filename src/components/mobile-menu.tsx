@@ -28,10 +28,7 @@ export function MobileMenu() {
             <DrawerTitle>菜单</DrawerTitle>
           </DrawerHeader>
           <div className="p-4 grid grid-cols-1 gap-3">
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <span className="text-sm font-medium">主题</span>
-              <ThemeSwitcher />
-            </div>
+            <ThemeSwitcher isMobile={true} />
             <Button asChild variant="outline">
               <a
                 href="https://github.com/chiperman/cloudflare-r2-dashboard"

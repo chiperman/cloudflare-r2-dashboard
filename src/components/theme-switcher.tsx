@@ -1,18 +1,23 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Laptop, Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+} from '@/components/ui/dropdown-menu';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Laptop, Moon, Sun, Palette } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
-const ThemeSwitcher = () => {
+const ThemeSwitcher = ({ isMobile = false }: { isMobile?: boolean }) => {
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
 
@@ -27,29 +32,56 @@ const ThemeSwitcher = () => {
 
   const ICON_SIZE = 16;
 
+  if (isMobile) {
+    return (
+      <Collapsible className="w-full space-y-2">
+        <CollapsibleTrigger asChild>
+          <Button
+            variant="outline"
+            className="w-full flex justify-center items-center gap-2"
+          >
+            <Palette size={ICON_SIZE} className="text-muted-foreground" />
+            <span>主题</span>
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-2">
+          <Button
+            variant={theme === 'light' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setTheme('light')}
+            className="w-full flex justify-start gap-2"
+          >
+            <Sun size={ICON_SIZE} />
+            <span>Light</span>
+          </Button>
+          <Button
+            variant={theme === 'dark' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setTheme('dark')}
+            className="w-full flex justify-start gap-2"
+          >
+            <Moon size={ICON_SIZE} />
+            <span>Dark</span>
+          </Button>
+          <Button
+            variant={theme === 'system' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setTheme('system')}
+            className="w-full flex justify-start gap-2"
+          >
+            <Laptop size={ICON_SIZE} />
+            <span>System</span>
+          </Button>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size={"sm"}>
-          {theme === "light" ? (
-            <Sun
-              key="light"
-              size={ICON_SIZE}
-              className={"text-muted-foreground"}
-            />
-          ) : theme === "dark" ? (
-            <Moon
-              key="dark"
-              size={ICON_SIZE}
-              className={"text-muted-foreground"}
-            />
-          ) : (
-            <Laptop
-              key="system"
-              size={ICON_SIZE}
-              className={"text-muted-foreground"}
-            />
-          )}
+          <Palette size={ICON_SIZE} className={"text-muted-foreground"} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-content" align="start">
