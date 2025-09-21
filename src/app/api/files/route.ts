@@ -104,8 +104,9 @@ export async function GET(request: NextRequest) {
 
     const totalCount = count || 0;
     const isTruncated = rangeTo < totalCount - 1;
+    const totalPages = Math.ceil(totalCount / limit);
 
-    return NextResponse.json({ files, directories, isTruncated });
+    return NextResponse.json({ files, directories, isTruncated, totalCount, totalPages, currentPage: page });
 
   } catch (error) {
     console.error('Error listing files from DB:', error);

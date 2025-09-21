@@ -101,6 +101,9 @@ interface FileListResponse {
   directories: string[];
   nextContinuationToken?: string;
   isTruncated?: boolean;
+  totalCount?: number;
+  totalPages?: number;
+  currentPage?: number;
 }
 
 interface FileListProps {
@@ -129,6 +132,9 @@ export function FileList({
   const files = useMemo(() => data?.files || [], [data]);
   const directories = useMemo(() => data?.directories || [], [data]);
   const hasMore = data?.isTruncated || false;
+  const totalCount = data?.totalCount || 0;
+  const totalPages = data?.totalPages || 1;
+  const currentApiPage = data?.currentPage || 1;
 
   useEffect(() => {
     if (newlyUploadedFiles.length > 0) {
@@ -657,21 +663,53 @@ export function FileList({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center space-x-6 lg:space-x-8">
+          <div className="flex items-center justify-between space-x-4">
+            <div className="text-sm text-muted-foreground whitespace-nowrap">
+              <span>共 {totalCount} 个项目</span>
+            </div>
             <Pagination>
-              <PaginationContent>
+              <PaginationContent className="flex items-center space-x-2">
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={handlePrevPage}
+                    onClick={() => {
+                      setSelectedKeys(new Set()); // 清空选中的文件
+                      handlePrevPage();
+                    }}
                     className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
                   />
                 </PaginationItem>
                 <PaginationItem>
-                  <PaginationLink isActive>{currentPage}</PaginationLink>
+                  <Select 
+                    value={currentPage.toString()} 
+                    onValueChange={(value) => {
+                      setSelectedKeys(new Set()); // 清空选中的文件
+                      setCurrentPage(parseInt(value, 10));
+                    }}
+                  >
+                    <SelectTrigger className="h-8 w-20">
+                      <SelectValue placeholder={currentPage.toString()} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: totalPages }, (_, i) => (
+                        <SelectItem key={i + 1} value={(i + 1).toString()}>
+                          {i + 1}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </PaginationItem>
+                <PaginationItem>
+                  <span className="text-sm text-muted-foreground">/</span>
+                </PaginationItem>
+                <PaginationItem>
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">共 {totalPages} 页</span>
                 </PaginationItem>
                 <PaginationItem>
                   <PaginationNext
-                    onClick={handleNextPage}
+                    onClick={() => {
+                      setSelectedKeys(new Set()); // 清空选中的文件
+                      handleNextPage();
+                    }}
                     className={!hasMore ? 'pointer-events-none opacity-50' : ''}
                   />
                 </PaginationItem>
