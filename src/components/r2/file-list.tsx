@@ -35,6 +35,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -155,6 +165,8 @@ export function FileList({
   const [newFolderName, setNewFolderName] = useState('');
   const [folderNameError, setFolderNameError] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isCreateFolderDrawerOpen, setIsCreateFolderDrawerOpen] = useState(false);
 
   const handleClearSearch = () => {
     setSearchTerm('');
@@ -218,6 +230,7 @@ export function FileList({
       toast({ title: '成功', description: `文件夹 "${newFolderName}" 创建成功。` });
       setNewFolderName('');
       setIsCreateFolderOpen(false);
+      setIsCreateFolderDrawerOpen(false);
       mutate();
     } catch (err) {
       toast({
@@ -382,46 +395,89 @@ export function FileList({
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
         <div className="order-1 sm:order-1">
-          <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="icon" className="sm:w-auto sm:px-4">
-                <FolderPlus className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">新建文件夹</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>新建文件夹</DialogTitle>
-              </DialogHeader>
-              <div className="py-4">
-                <Input
-                  placeholder="请输入文件夹名称"
-                  value={newFolderName}
-                  onChange={(e) => {
-                    const name = e.target.value;
-                    setNewFolderName(name);
-                    const safeNameRegex = /^[a-zA-Z0-9_-]*$/;
-                    if (!safeNameRegex.test(name)) {
-                      setFolderNameError('名称只能包含字母、数字、- 和 _');
-                    } else {
-                      setFolderNameError('');
-                    }
-                  }}
-                />
-                {folderNameError && (
-                  <p className="text-sm text-destructive mt-2">{folderNameError}</p>
-                )}
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="ghost">取消</Button>
-                </DialogClose>
-                <Button onClick={handleCreateFolder} disabled={!!folderNameError || !newFolderName}>
-                  创建
+          <div className="hidden sm:block">
+            <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon" className="sm:w-auto sm:px-4">
+                  <FolderPlus className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">新建文件夹</span>
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>新建文件夹</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                  <Input
+                    placeholder="请输入文件夹名称"
+                    value={newFolderName}
+                    onChange={(e) => {
+                      const name = e.target.value;
+                      setNewFolderName(name);
+                      const safeNameRegex = /^[a-zA-Z0-9_-]*$/;
+                      if (!safeNameRegex.test(name)) {
+                        setFolderNameError('名称只能包含字母、数字、- 和 _');
+                      } else {
+                        setFolderNameError('');
+                      }
+                    }}
+                  />
+                  {folderNameError && (
+                    <p className="text-sm text-destructive mt-2">{folderNameError}</p>
+                  )}
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="ghost">取消</Button>
+                  </DialogClose>
+                  <Button onClick={handleCreateFolder} disabled={!!folderNameError || !newFolderName}>
+                    创建
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <div className="sm:hidden">
+            <Drawer open={isCreateFolderDrawerOpen} onOpenChange={setIsCreateFolderDrawerOpen}>
+              <DrawerTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <FolderPlus className="h-4 w-4" />
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>新建文件夹</DrawerTitle>
+                </DrawerHeader>
+                <div className="p-4">
+                  <Input
+                    placeholder="请输入文件夹名称"
+                    value={newFolderName}
+                    onChange={(e) => {
+                      const name = e.target.value;
+                      setNewFolderName(name);
+                      const safeNameRegex = /^[a-zA-Z0-9_-]*$/;
+                      if (!safeNameRegex.test(name)) {
+                        setFolderNameError('名称只能包含字母、数字、- 和 _');
+                      } else {
+                        setFolderNameError('');
+                      }
+                    }}
+                  />
+                  {folderNameError && (
+                    <p className="text-sm text-destructive mt-2">{folderNameError}</p>
+                  )}
+                </div>
+                <DrawerFooter>
+                  <DrawerClose asChild>
+                    <Button variant="outline">取消</Button>
+                  </DrawerClose>
+                  <Button onClick={handleCreateFolder} disabled={!!folderNameError || !newFolderName}>
+                    创建
+                  </Button>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
+          </div>
         </div>
 
         <div className="order-3 sm:order-2 w-full sm:w-auto">
@@ -449,27 +505,73 @@ export function FileList({
                 <X className="h-4 w-4" />
               </Button>
             )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="rounded-l-none">
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem 
-                  onSelect={() => setSearchScope('current')}
-                  className={searchScope === 'current' ? 'bg-accent' : ''}
-                >
-                  当前文件夹
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onSelect={() => setSearchScope('global')}
-                  className={searchScope === 'global' ? 'bg-accent' : ''}
-                >
-                  全局
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="hidden sm:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="rounded-l-none">
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => setSearchScope('current')}
+                    className={searchScope === 'current' ? 'bg-accent' : ''}
+                  >
+                    当前文件夹
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => setSearchScope('global')}
+                    className={searchScope === 'global' ? 'bg-accent' : ''}
+                  >
+                    全局
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="sm:hidden">
+              <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                <DrawerTrigger asChild>
+                  <Button variant="ghost" className="rounded-l-none">
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <DrawerHeader>
+                    <DrawerTitle>选择搜索范围</DrawerTitle>
+                    <DrawerDescription>
+                      选择一个范围进行搜索
+                    </DrawerDescription>
+                  </DrawerHeader>
+                  <div className="p-4">
+                    <Button
+                      variant={searchScope === 'current' ? 'default' : 'outline'}
+                      className="w-full mb-2"
+                      onClick={() => {
+                        setSearchScope('current');
+                        setIsDrawerOpen(false);
+                      }}
+                    >
+                      当前文件夹
+                    </Button>
+                    <Button
+                      variant={searchScope === 'global' ? 'default' : 'outline'}
+                      className="w-full"
+                      onClick={() => {
+                        setSearchScope('global');
+                        setIsDrawerOpen(false);
+                      }}
+                    >
+                      全局
+                    </Button>
+                  </div>
+                  <DrawerFooter>
+                    <DrawerClose asChild>
+                      <Button variant="outline">取消</Button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </DrawerContent>
+              </Drawer>
+            </div>
           </div>
         </div>
 
