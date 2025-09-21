@@ -74,6 +74,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -756,18 +757,56 @@ export function FileList({
           <div className="flex w-full items-center justify-between sm:w-auto sm:gap-8">
             <div className="flex items-center space-x-2">
               <p className="hidden text-sm font-medium sm:inline-block">每页行数</p>
-              <Select value={`${pageSize}`} onValueChange={(value) => handlePageSizeChange(value)}>
-                <SelectTrigger className="h-8 w-[70px]">
-                  <SelectValue placeholder={`${pageSize}`} />
-                </SelectTrigger>
-                <SelectContent>
-                  {[10, 20, 50].map((size) => (
-                    <SelectItem key={size} value={`${size}`}>
-                      {size}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {/* Desktop Select */}
+              <div className="hidden sm:block">
+                <Select
+                  value={`${pageSize}`}
+                  onValueChange={(value) => handlePageSizeChange(value)}
+                >
+                  <SelectTrigger className="h-8 w-[70px]">
+                    <SelectValue placeholder={`${pageSize}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[10, 20, 50].map((size) => (
+                      <SelectItem key={size} value={`${size}`}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Mobile Drawer */}
+              <div className="sm:hidden">
+                <Drawer>
+                  <DrawerTrigger asChild>
+                    <Button variant="outline" className="h-8 w-[70px]">
+                      {pageSize}
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent>
+                    <DrawerHeader>
+                      <DrawerTitle>选择每页行数</DrawerTitle>
+                    </DrawerHeader>
+                    <div className="p-4 grid grid-cols-1 gap-2">
+                      {[10, 20, 50].map((size) => (
+                        <DrawerClose asChild key={size}>
+                          <Button
+                            variant={size === pageSize ? 'default' : 'outline'}
+                            onClick={() => handlePageSizeChange(size.toString())}
+                          >
+                            {size}
+                          </Button>
+                        </DrawerClose>
+                      ))}
+                    </div>
+                    <DrawerFooter>
+                      <DrawerClose asChild>
+                        <Button variant="outline">取消</Button>
+                      </DrawerClose>
+                    </DrawerFooter>
+                  </DrawerContent>
+                </Drawer>
+              </div>
             </div>
             <div className="text-sm text-muted-foreground">
               共 {totalCount} 个项目
@@ -775,51 +814,106 @@ export function FileList({
           </div>
 
           <div className="flex w-full items-center justify-center sm:w-auto">
-            <Pagination>
-              <PaginationContent className="flex items-center space-x-2">
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => {
-                      setSelectedKeys(new Set());
-                      handlePrevPage();
-                    }}
-                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
-                  />
-                </PaginationItem>
-                <PaginationItem>
-                  <Select 
-                    value={currentPage.toString()} 
-                    onValueChange={(value) => {
-                      setSelectedKeys(new Set());
-                      setCurrentPage(parseInt(value, 10));
-                    }}
-                  >
-                    <SelectTrigger className="h-8 w-20">
-                      <SelectValue placeholder={currentPage.toString()} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: totalPages }, (_, i) => (
-                        <SelectItem key={i + 1} value={(i + 1).toString()}>
-                          {i + 1}
-                        </SelectItem>
+            {/* Desktop Pagination */}
+            <div className="hidden sm:flex">
+              <Pagination>
+                <PaginationContent className="flex items-center space-x-2">
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => {
+                        setSelectedKeys(new Set());
+                        handlePrevPage();
+                      }}
+                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                    />
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Select
+                      value={currentPage.toString()}
+                      onValueChange={(value) => {
+                        setSelectedKeys(new Set());
+                        setCurrentPage(parseInt(value, 10));
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-20">
+                        <SelectValue placeholder={currentPage.toString()} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: totalPages }, (_, i) => (
+                          <SelectItem key={i + 1} value={(i + 1).toString()}>
+                            {i + 1}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <span className="text-sm text-muted-foreground">/ {totalPages} 页</span>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => {
+                        setSelectedKeys(new Set());
+                        handleNextPage();
+                      }}
+                      className={!hasMore ? 'pointer-events-none opacity-50' : ''}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+
+            {/* Mobile Drawer Pagination */}
+            <div className="flex w-full items-center justify-between sm:hidden">
+              <PaginationPrevious
+                onClick={() => {
+                  setSelectedKeys(new Set());
+                  handlePrevPage();
+                }}
+                className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+              />
+              <Drawer>
+                <DrawerTrigger asChild>
+                  <Button variant="outline">
+                    第 {currentPage} / {totalPages} 页
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <DrawerHeader>
+                    <DrawerTitle>跳转到页面</DrawerTitle>
+                  </DrawerHeader>
+                  <ScrollArea className="max-h-[40vh]">
+                    <div className="p-4 grid grid-cols-1 gap-2">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <DrawerClose asChild key={page}>
+                          <Button
+                            variant={page === currentPage ? 'default' : 'outline'}
+                            onClick={() => {
+                              setSelectedKeys(new Set());
+                              setCurrentPage(page);
+                            }}
+                          >
+                            {page}
+                          </Button>
+                        </DrawerClose>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </PaginationItem>
-                <PaginationItem>
-                  <span className="text-sm text-muted-foreground">/ {totalPages} 页</span>
-                </PaginationItem>
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => {
-                      setSelectedKeys(new Set());
-                      handleNextPage();
-                    }}
-                    className={!hasMore ? 'pointer-events-none opacity-50' : ''}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+                    </div>
+                  </ScrollArea>
+                  <DrawerFooter>
+                    <DrawerClose asChild>
+                      <Button variant="outline">取消</Button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </DrawerContent>
+              </Drawer>
+              <PaginationNext
+                onClick={() => {
+                  setSelectedKeys(new Set());
+                  handleNextPage();
+                }}
+                className={!hasMore ? 'pointer-events-none opacity-50' : ''}
+              />
+            </div>
           </div>
         </div>
       </div>

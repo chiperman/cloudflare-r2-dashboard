@@ -1,65 +1,56 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import { ThemeSwitcher } from './theme-switcher';
 import GithubIcon from './icons/github-icon';
 import { Button } from '@/components/ui/button';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
 
 export function MobileMenu() {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
-
   return (
-    <div className="md:hidden relative" ref={menuRef}>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Toggle menu"
-      >
-        <Menu size={20} />
-      </Button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-background border border-foreground/10 rounded-md shadow-lg z-50">
-          <div className="flex flex-col py-1">
-            <a
-              href="https://github.com/chiperman/cloudflare-r2-dashboard"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-between px-4 py-2 text-sm hover:bg-muted"
-              onClick={() => setIsOpen(false)}
-            >
-              <span>GitHub</span>
-              <Button variant="ghost" size="sm">
-                <GithubIcon className="text-muted-foreground" size={16} />
-              </Button>
-            </a>
-            <div className="flex items-center justify-between px-4 py-2 hover:bg-muted">
-              <span className="text-sm">Theme</span>
+    <div className="md:hidden">
+      <Drawer>
+        <DrawerTrigger asChild>
+          <Button variant="ghost" size="sm" aria-label="Toggle menu">
+            <Menu size={20} />
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>菜单</DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4 grid grid-cols-1 gap-3">
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <span className="text-sm font-medium">主题</span>
               <ThemeSwitcher />
             </div>
+            <Button asChild variant="outline">
+              <a
+                href="https://github.com/chiperman/cloudflare-r2-dashboard"
+                target="_blank"
+                rel="noreferrer"
+                className="flex w-full items-center justify-center gap-2"
+              >
+                <GithubIcon />
+                <span>查看源码</span>
+              </a>
+            </Button>
           </div>
-        </div>
-      )}
+          <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">关闭</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
