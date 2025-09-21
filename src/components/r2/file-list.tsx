@@ -394,7 +394,7 @@ export function FileList({
         </Breadcrumb>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-4 sm:justify-start">
         <div className="order-1 sm:order-1">
           <div className="hidden sm:block">
             <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
@@ -481,7 +481,7 @@ export function FileList({
           </div>
         </div>
 
-        <div className="order-3 sm:order-2 w-full sm:w-auto">
+        <div className="order-3 sm:order-2 w-full sm:w-auto sm:ml-auto">
           <div className="relative w-full max-w-sm flex items-center border border-input rounded-md focus-within:border-primary">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
