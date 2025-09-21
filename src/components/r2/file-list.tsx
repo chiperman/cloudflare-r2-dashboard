@@ -422,6 +422,7 @@ export function FileList({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   setDebouncedSearchTerm(searchTerm);
+                  setCurrentPage(1);
                 }
               }}
             />
