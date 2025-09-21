@@ -380,13 +380,13 @@ export function FileList({
         </Breadcrumb>
       </div>
 
-      <div className="mb-4 flex items-center justify-between">
-        <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="order-1 sm:order-1">
           <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline">
-                <FolderPlus className="mr-2 h-4 w-4" />
-                新建文件夹
+              <Button variant="outline" size="icon" className="sm:w-auto sm:px-4">
+                <FolderPlus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">新建文件夹</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -424,7 +424,7 @@ export function FileList({
           </Dialog>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="order-3 sm:order-2 w-full sm:w-auto">
           <div className="relative w-full max-w-sm flex items-center border border-input rounded-md focus-within:border-primary">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
@@ -471,6 +471,9 @@ export function FileList({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+        </div>
+
+        <div className="order-2 sm:order-3">
           <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
@@ -647,32 +650,35 @@ export function FileList({
         {!directories.length && !files.length && (
           <div className="text-center p-8 text-muted-foreground">此文件夹为空</div>
         )}
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">每页行数</p>
-            <Select value={`${pageSize}`} onValueChange={(value) => handlePageSizeChange(value)}>
-              <SelectTrigger className="h-8 w-[70px]">
-                <SelectValue placeholder={`${pageSize}`} />
-              </SelectTrigger>
-              <SelectContent>
-                {[10, 20, 50].map((size) => (
-                  <SelectItem key={size} value={`${size}`}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center justify-between space-x-4">
-            <div className="text-sm text-muted-foreground whitespace-nowrap">
-              <span>共 {totalCount} 个项目</span>
+        <div className="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
+          <div className="flex w-full items-center justify-between sm:w-auto sm:gap-8">
+            <div className="flex items-center space-x-2">
+              <p className="hidden text-sm font-medium sm:inline-block">每页行数</p>
+              <Select value={`${pageSize}`} onValueChange={(value) => handlePageSizeChange(value)}>
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue placeholder={`${pageSize}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {[10, 20, 50].map((size) => (
+                    <SelectItem key={size} value={`${size}`}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            <div className="text-sm text-muted-foreground">
+              共 {totalCount} 个项目
+            </div>
+          </div>
+
+          <div className="flex w-full items-center justify-center sm:w-auto">
             <Pagination>
               <PaginationContent className="flex items-center space-x-2">
                 <PaginationItem>
                   <PaginationPrevious
                     onClick={() => {
-                      setSelectedKeys(new Set()); // 清空选中的文件
+                      setSelectedKeys(new Set());
                       handlePrevPage();
                     }}
                     className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
@@ -682,7 +688,7 @@ export function FileList({
                   <Select 
                     value={currentPage.toString()} 
                     onValueChange={(value) => {
-                      setSelectedKeys(new Set()); // 清空选中的文件
+                      setSelectedKeys(new Set());
                       setCurrentPage(parseInt(value, 10));
                     }}
                   >
@@ -699,15 +705,12 @@ export function FileList({
                   </Select>
                 </PaginationItem>
                 <PaginationItem>
-                  <span className="text-sm text-muted-foreground">/</span>
-                </PaginationItem>
-                <PaginationItem>
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">共 {totalPages} 页</span>
+                  <span className="text-sm text-muted-foreground">/ {totalPages} 页</span>
                 </PaginationItem>
                 <PaginationItem>
                   <PaginationNext
                     onClick={() => {
-                      setSelectedKeys(new Set()); // 清空选中的文件
+                      setSelectedKeys(new Set());
                       handleNextPage();
                     }}
                     className={!hasMore ? 'pointer-events-none opacity-50' : ''}
