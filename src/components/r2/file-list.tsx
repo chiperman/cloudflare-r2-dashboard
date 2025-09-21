@@ -23,6 +23,7 @@ import {
   RefreshCw,
   Search,
   ChevronDown,
+  X,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -148,6 +149,12 @@ export function FileList({
   const [newFolderName, setNewFolderName] = useState('');
   const [folderNameError, setFolderNameError] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setDebouncedSearchTerm('');
+    setCurrentPage(1);
+  };
 
   const handleNextPage = () => {
     if (hasMore) {
@@ -416,7 +423,7 @@ export function FileList({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               placeholder={searchScope === 'current' ? '搜索当前文件夹...' : '全局搜索...'}
-              className="pl-10 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
+              className="pl-10 pr-20 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => {
@@ -426,6 +433,16 @@ export function FileList({
                 }
               }}
             />
+            {searchTerm && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-12 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                onClick={handleClearSearch}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="rounded-l-none">
