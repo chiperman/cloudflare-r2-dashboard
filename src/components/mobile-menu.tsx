@@ -13,6 +13,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer';
+import { LogoutButton } from './logout-button';
 
 export function MobileMenu() {
   return (
@@ -40,6 +41,7 @@ export function MobileMenu() {
                 <span>查看源码</span>
               </a>
             </Button>
+            <LogoutButton />
           </div>
           <DrawerFooter>
             <DrawerClose asChild>

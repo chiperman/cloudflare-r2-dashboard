@@ -52,7 +52,9 @@ export function AuthDialogManager() {
     return (
       <div className="flex items-center gap-4">
         {user.user_metadata.display_name || user.email}
-        <LogoutButton />
+        <div className="hidden md:flex items-center gap-4">
+          <LogoutButton />
+        </div>
         <ProfileDialog user={user} />
       </div>
     );
