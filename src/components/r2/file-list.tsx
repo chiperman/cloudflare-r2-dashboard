@@ -92,6 +92,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import type { User } from '@supabase/supabase-js';
 import { R2File } from '@/lib/types';
@@ -388,7 +389,116 @@ export function FileList({
 
   const breadcrumbParts = currentPrefix.split('/').filter((p) => p);
 
-  if (isLoading) return <div className="text-center p-8">加载中...</div>;
+  // 骨架屏组件
+  const FileListSkeleton = () => (
+    <>
+      {/* Breadcrumb 骨架屏 */}
+      <div className="mb-4">
+        <Skeleton className="h-6 w-32" />
+      </div>
+
+      {/* 操作栏骨架屏 */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-4 sm:justify-start">
+        <div className="order-1 sm:order-1">
+          <Skeleton className="h-10 w-32 hidden sm:block" />
+          <Skeleton className="h-10 w-10 sm:hidden" />
+        </div>
+
+        <div className="order-3 sm:order-2 w-full sm:w-auto sm:ml-auto">
+          <div className="relative w-full max-w-sm flex items-center border rounded-md h-10">
+            <Skeleton className="absolute left-3 h-5 w-5" />
+            <Skeleton className="w-full h-full ml-10 mr-20" />
+            <Skeleton className="absolute right-3 h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="order-2 sm:order-3">
+          <Skeleton className="h-10 w-10" />
+        </div>
+      </div>
+
+      {/* 文件列表骨架屏 */}
+      <div className="w-full border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-center">
+                <Skeleton className="h-4 w-4 mx-auto" />
+              </TableHead>
+              <TableHead className="text-center">预览</TableHead>
+              <TableHead className="text-center">名称</TableHead>
+              <TableHead className="text-center">用户</TableHead>
+              <TableHead className="text-center">上传时间</TableHead>
+              <TableHead className="text-center">文件大小</TableHead>
+              <TableHead className="text-center">操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: pageSize }).map((_, index) => (
+              <TableRow key={index} className="h-[50px]">
+                <TableCell className="text-center">
+                  <Skeleton className="h-4 w-4 mx-auto" />
+                </TableCell>
+                <TableCell className="flex items-center justify-center">
+                  <Skeleton className="w-[50px] h-[50px] rounded-md" />
+                </TableCell>
+                <TableCell className="text-center">
+                  <Skeleton className="h-4 w-24 mx-auto" />
+                </TableCell>
+                <TableCell className="text-center">
+                  <Skeleton className="h-4 w-16 mx-auto" />
+                </TableCell>
+                <TableCell className="text-center">
+                  <Skeleton className="h-4 w-20 mx-auto" />
+                </TableCell>
+                <TableCell className="text-center">
+                  <Skeleton className="h-4 w-16 mx-auto" />
+                </TableCell>
+                <TableCell className="text-center">
+                  <Skeleton className="h-8 w-8 mx-auto rounded-sm" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        {/* 分页控件骨架屏 */}
+        <div className="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
+          <div className="flex w-full items-center justify-between sm:w-auto sm:gap-8">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-16 hidden sm:block" />
+              <Skeleton className="h-8 w-[70px]" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+          </div>
+          <div className="flex w-full items-center justify-center sm:w-auto">
+            <div className="hidden sm:flex">
+              <Pagination>
+                <PaginationContent className="flex items-center space-x-2">
+                  <PaginationItem>
+                    <Skeleton className="h-8 w-20" />
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Skeleton className="h-4 w-16" />
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Skeleton className="h-8 w-20" />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+            <div className="flex w-full items-center justify-between sm:hidden">
+              <Skeleton className="h-8 w-8" />
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-8 w-8" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  if (isLoading) return <FileListSkeleton />;
   if (error) return <div className="text-center p-8 text-destructive">加载失败</div>;
 
   return (
@@ -1007,7 +1117,7 @@ export function FileList({
                       alt={previewFile.key}
                       fill
                       className="object-contain"
-                      placeholder={previewFile.blurDataURL ? "blur" : "empty"}
+                      placeholder={previewFile.blurDataURL ? 'blur' : 'empty'}
                       {...(previewFile.blurDataURL && { blurDataURL: previewFile.blurDataURL })}
                     />
                   </div>
