@@ -137,7 +137,9 @@ export function FileList({
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [searchScope, setSearchScope] = useState('current'); // 'current' or 'global'
 
-  const swrKey = `/api/files?limit=${pageSize}&prefix=${searchScope === 'global' ? '' : currentPrefix}&page=${currentPage}&search=${debouncedSearchTerm}`;
+  const swrKey = `/api/files?limit=${pageSize}&prefix=${
+    searchScope === 'global' ? '' : currentPrefix
+  }&page=${currentPage}&search=${debouncedSearchTerm}`;
   const { data, error, isLoading, mutate } = useSWR<FileListResponse>(swrKey, fetcher);
 
   const files = useMemo(() => data?.files || [], [data]);
@@ -431,7 +433,10 @@ export function FileList({
                   <DialogClose asChild>
                     <Button variant="ghost">取消</Button>
                   </DialogClose>
-                  <Button onClick={handleCreateFolder} disabled={!!folderNameError || !newFolderName}>
+                  <Button
+                    onClick={handleCreateFolder}
+                    disabled={!!folderNameError || !newFolderName}
+                  >
                     创建
                   </Button>
                 </DialogFooter>
@@ -472,7 +477,10 @@ export function FileList({
                   <DrawerClose asChild>
                     <Button variant="outline">取消</Button>
                   </DrawerClose>
-                  <Button onClick={handleCreateFolder} disabled={!!folderNameError || !newFolderName}>
+                  <Button
+                    onClick={handleCreateFolder}
+                    disabled={!!folderNameError || !newFolderName}
+                  >
                     创建
                   </Button>
                 </DrawerFooter>
@@ -539,9 +547,7 @@ export function FileList({
                 <DrawerContent>
                   <DrawerHeader>
                     <DrawerTitle>选择搜索范围</DrawerTitle>
-                    <DrawerDescription>
-                      选择一个范围进行搜索
-                    </DrawerDescription>
+                    <DrawerDescription>选择一个范围进行搜索</DrawerDescription>
                   </DrawerHeader>
                   <div className="p-4">
                     <Button
@@ -635,7 +641,7 @@ export function FileList({
                       <AlertDialogFooter>
                         <AlertDialogCancel>取消</AlertDialogCancel>
                         <AlertDialogAction onClick={() => handleDeleteFolder(dir)}>
-                          确认删除
+                          删除
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -808,9 +814,7 @@ export function FileList({
                 </Drawer>
               </div>
             </div>
-            <div className="text-sm text-muted-foreground">
-              共 {totalCount} 个项目
-            </div>
+            <div className="text-sm text-muted-foreground">共 {totalCount} 个项目</div>
           </div>
 
           <div className="flex w-full items-center justify-center sm:w-auto">
@@ -979,6 +983,52 @@ export function FileList({
                   </div>
                 )}
               </div>
+              <DialogFooter className="mt-4 w-full">
+                <div className="flex justify-center space-x-2">
+                  <a href={previewFile.url} download={previewFile.key}>
+                    <Button variant="outline">
+                      <Download className="mr-2 h-4 w-4" />
+                      下载
+                    </Button>
+                  </a>
+                  <Button variant="outline" onClick={() => handleCopy(previewFile.url)}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    复制链接
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        disabled={Boolean(
+                          !previewFile.user_id || (user && user.id !== previewFile.user_id)
+                        )}
+                        title={
+                          !previewFile.user_id || (user && user.id !== previewFile.user_id)
+                            ? '你没有删除此文件的权限'
+                            : '删除文件'
+                        }
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        删除
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>确认删除？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          确认删除 {previewFile.key}？此操作不可恢复。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(previewFile.key)}>
+                          删除
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </DialogFooter>
             </>
           )}
         </DialogContent>
