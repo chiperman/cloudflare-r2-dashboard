@@ -23,6 +23,8 @@ import {
   RefreshCw,
   Search,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   X,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -163,6 +165,7 @@ export function FileList({
   }, [currentPrefix, pageSize]);
 
   const [previewFile, setPreviewFile] = useState<R2File | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -170,6 +173,26 @@ export function FileList({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCreateFolderDrawerOpen, setIsCreateFolderDrawerOpen] = useState(false);
+
+  const handleOpenPreview = (file: R2File) => {
+    const index = files.findIndex((f) => f.key === file.key);
+    setPreviewFile(file);
+    setPreviewIndex(index);
+  };
+
+  const handleNextPreview = () => {
+    if (previewIndex === null || previewIndex === files.length - 1) return;
+    const nextIndex = previewIndex + 1;
+    setPreviewFile(files[nextIndex]);
+    setPreviewIndex(nextIndex);
+  };
+
+  const handlePrevPreview = () => {
+    if (previewIndex === null || previewIndex === 0) return;
+    const prevIndex = previewIndex - 1;
+    setPreviewFile(files[prevIndex]);
+    setPreviewIndex(prevIndex);
+  };
 
   const handleClearSearch = () => {
     setSearchTerm('');
@@ -660,7 +683,7 @@ export function FileList({
                 <TableCell className="flex items-center justify-center">
                   <button
                     className="relative group transition-transform hover:scale-105"
-                    onClick={() => setPreviewFile(file)}
+                    onClick={() => handleOpenPreview(file)}
                   >
                     <div className="relative rounded-md overflow-hidden">
                       <div className="bg-muted w-[50px] h-[50px] flex items-center justify-center">
@@ -954,7 +977,16 @@ export function FileList({
               <DialogHeader>
                 <DialogTitle>{previewFile.key}</DialogTitle>
               </DialogHeader>
-              <div className="mt-4 relative w-full h-[70vh]">
+              <div className="mt-4 relative w-full h-[70vh] flex items-center justify-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handlePrevPreview}
+                  disabled={previewIndex === 0}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </Button>
                 {previewFile.key.toLowerCase().endsWith('.mp4') ||
                 previewFile.key.toLowerCase().endsWith('.webm') ||
                 previewFile.key.toLowerCase().endsWith('.mov') ? (
@@ -967,21 +999,28 @@ export function FileList({
                     Your browser does not support the video tag.
                   </video>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="relative w-full h-full max-w-[70vh] max-h-[70vh]">
-                      {/* Loading indicator */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-                      </div>
-                      <Image
-                        src={previewFile.url}
-                        alt={previewFile.key}
-                        fill
-                        className="object-contain"
-                      />
+                  <div className="relative w-full h-full max-w-[70vh] max-h-[70vh]">
+                    {/* Loading indicator */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
                     </div>
+                    <Image
+                      src={previewFile.url}
+                      alt={previewFile.key}
+                      fill
+                      className="object-contain"
+                    />
                   </div>
                 )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleNextPreview}
+                  disabled={previewIndex === files.length - 1}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </Button>
               </div>
               <DialogFooter className="mt-4 w-full">
                 <div className="flex justify-center space-x-2">
