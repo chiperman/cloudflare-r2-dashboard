@@ -17,7 +17,8 @@ CREATE TABLE public.files (
   size BIGINT,
   content_type TEXT,
   -- 关联 auth.users。如果用户被删除，此字段设置为 NULL
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  blur_data_url TEXT
 );
 
 -- 2. 为提高性能创建索引
@@ -74,7 +75,9 @@ DROP FUNCTION IF EXISTS get_directories_in_prefix(TEXT);
 -- 创建函数
 CREATE OR REPLACE FUNCTION get_directories_in_prefix(p_prefix TEXT)
 -- 此函数返回一个名为 "directory_name" 的单列表
-RETURNS TABLE(directory_name TEXT) AS $
+RETURNS TABLE(directory_name TEXT)
+LANGUAGE plpgsql
+AS $$
 BEGIN
     -- 这是函数的核心逻辑
     RETURN QUERY
@@ -89,10 +92,8 @@ BEGIN
     WHERE
         -- 查找所有嵌套在给定前缀下的路径
         files.key LIKE p_prefix || '%/%';
-
 END;
-$ LANGUAGE plpgsql;
-
+$$;
 
 -- 5.2 (推荐) 添加额外的数据库索引
 -- 目的：为 `files` 表中经常用于查询和排序的字段添加索引，大幅提升查询性能。

@@ -6,4 +6,5 @@ export interface R2File {
   thumbnailUrl: string;
   user_id?: string;
   uploader: string;
+  blurDataURL?: string;
 }

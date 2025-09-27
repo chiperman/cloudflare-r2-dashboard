@@ -3,6 +3,7 @@ import { getS3Client } from '@/lib/r2';
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { nanoid } from 'nanoid';
+import { getPlaiceholder } from "plaiceholder";
 
 import { createServerClient } from '@supabase/ssr';
 
@@ -63,10 +64,14 @@ export async function POST(request: NextRequest) {
     console.log('OriginalKey for R2 upload:', originalKey);
     let thumbnailUrl: string;
     let thumbnailKey: string | null = null;
+    let blurDataURL: string | undefined = undefined;
 
     // 根据文件类型选择缩略图
     if (contentType.startsWith('image/')) {
       try {
+        const { base64 } = await getPlaiceholder(fileBuffer);
+        blurDataURL = base64;
+
         const thumbnailBuffer = await sharp(fileBuffer)
           .resize({ width: 200, height: 200, fit: 'cover' })
           .toBuffer();
@@ -98,6 +103,7 @@ export async function POST(request: NextRequest) {
       size: file.size,
       content_type: contentType,
       user_id: user.id,
+      blur_data_url: blurDataURL,
     });
 
     if (dbError) {
@@ -116,6 +122,7 @@ export async function POST(request: NextRequest) {
       uploadedAt: now.toISOString(),
       url: `/api/images/${originalKey}`,
       thumbnailUrl: thumbnailUrl,
+      blurDataURL: blurDataURL,
     };
 
     return NextResponse.json(newFile);
@@ -132,4 +139,5 @@ interface R2File {
   uploadedAt: string;
   url: string;
   thumbnailUrl: string;
+  blurDataURL?: string;
 }

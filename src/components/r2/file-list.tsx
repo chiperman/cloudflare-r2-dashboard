@@ -693,6 +693,8 @@ export function FileList({
                           fill
                           className="object-cover cursor-pointer"
                           sizes="50px"
+                          placeholder={file.blurDataURL ? 'blur' : 'empty'}
+                          {...(file.blurDataURL && { blurDataURL: file.blurDataURL })}
                         />
                       </div>
                     </div>
@@ -1000,15 +1002,13 @@ export function FileList({
                   </video>
                 ) : (
                   <div className="relative w-full h-full max-w-[70vh] max-h-[70vh]">
-                    {/* Loading indicator */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-                    </div>
                     <Image
                       src={previewFile.url}
                       alt={previewFile.key}
                       fill
                       className="object-contain"
+                      placeholder={previewFile.blurDataURL ? "blur" : "empty"}
+                      {...(previewFile.blurDataURL && { blurDataURL: previewFile.blurDataURL })}
                     />
                   </div>
                 )}

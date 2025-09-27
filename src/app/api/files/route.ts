@@ -99,6 +99,7 @@ export async function GET(request: NextRequest) {
         thumbnailUrl: thumbnailUrl,
         user_id: file.user_id,
         uploader: uploader,
+        blurDataURL: file.blur_data_url,
       };
     });
 
