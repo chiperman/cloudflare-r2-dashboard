@@ -1,12 +1,19 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { PutObjectCommand, ListObjectsV2Command, DeleteObjectsCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import {
+  PutObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getS3Client } from '@/lib/r2';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -19,7 +26,10 @@ export async function POST(request: NextRequest) {
 
     const safeNameRegex = /^[a-zA-Z0-9_-]+$/;
     if (!folderName || !safeNameRegex.test(folderName)) {
-      return NextResponse.json({ error: '无效的文件夹名称。名称只能包含字母、数字、连字符和下划线。' }, { status: 400 });
+      return NextResponse.json(
+        { error: '无效的文件夹名称。名称只能包含字母、数字、连字符和下划线。' },
+        { status: 400 }
+      );
     }
 
     folderKey = `${currentPrefix}${folderName}/`;
@@ -63,7 +73,6 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ message: `文件夹 '${folderName}' 创建成功。` });
-
   } catch (error) {
     console.error('创建文件夹失败:', error);
     const errorMessage = error instanceof Error ? error.message : '创建文件夹时发生未知错误。';
@@ -72,6 +81,27 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const supabaseUserClient = await createClient();
+  const {
+    data: { user },
+  } = await supabaseUserClient.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: '未授权' }, { status: 401 });
+  }
+
+  // Role-Based Access Control Check
+  const { data: profile } = await supabaseUserClient
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role !== 'admin') {
+    return NextResponse.json({ error: '禁止操作：需要管理员权限。' }, { status: 403 });
+  }
+
+  // Admin-only logic continues...
   try {
     const { prefix } = await request.json();
 
@@ -94,11 +124,11 @@ export async function DELETE(request: NextRequest) {
       const listResponse = await s3Client.send(listCommand);
 
       if (!listResponse.Contents || listResponse.Contents.length === 0) {
-        break; 
+        break;
       }
 
       // All keys in the current batch from R2
-      const keysInBatch = listResponse.Contents.map(obj => obj.Key!);
+      const keysInBatch = listResponse.Contents.map((obj) => obj.Key!);
 
       const promises = [];
 
@@ -108,7 +138,7 @@ export async function DELETE(request: NextRequest) {
           s3Client.send(
             new DeleteObjectsCommand({
               Bucket: bucketName,
-              Delete: { Objects: keysInBatch.map(k => ({ Key: k })) },
+              Delete: { Objects: keysInBatch.map((k) => ({ Key: k })) },
             })
           )
         );
@@ -116,14 +146,12 @@ export async function DELETE(request: NextRequest) {
 
       // Supabase Deletion Promise (delete all corresponding records in the batch)
       if (keysInBatch.length > 0) {
-        promises.push(
-          supabase.from('files').delete().in('key', keysInBatch)
-        );
+        promises.push(supabase.from('files').delete().in('key', keysInBatch));
       }
 
       if (promises.length > 0) {
         const results = await Promise.allSettled(promises);
-        results.forEach(result => {
+        results.forEach((result) => {
           if (result.status === 'rejected') {
             console.error('A delete operation failed:', result.reason);
           }
@@ -137,7 +165,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ message: `文件夹 '${prefix}' 已成功删除。` });
-
   } catch (error) {
     console.error('删除文件夹失败:', error);
     const errorMessage = error instanceof Error ? error.message : '删除文件夹时发生未知错误。';

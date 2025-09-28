@@ -1,70 +1,76 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
-import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
-import { UploadForm } from '@/components/r2/upload-form';
 import { FileList } from '@/components/r2/file-list';
+import { UploadForm } from '@/components/r2/upload-form';
 import { R2Metrics } from '@/components/r2/r2-metrics';
-import { R2File } from '@/lib/types';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
+import { EnvVarWarning } from '@/components/env-var-warning';
 
-
+interface UserProfile {
+  id: string;
+  role: string;
+  // Add other profile fields if needed
+}
 
 export function HomeClientContent() {
-  const [newlyUploadedFiles, setNewlyUploadedFiles] = useState<R2File[]>([]);
-  const [currentPrefix, setCurrentPrefix] = useState('');
-  const [user, setUser] = useState<User | null>(null);
-  const [accordionDefaultValue, setAccordionDefaultValue] = useState('');
   const supabase = createClient();
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [newlyUploadedFiles, setNewlyUploadedFiles] = useState<any[]>([]);
+  const [currentPrefix, setCurrentPrefix] = useState('');
 
   useEffect(() => {
-    const getUser = async () => {
+    const getUserAndProfile = async () => {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-    };
-    getUser();
 
-    const checkScreenSize = () => {
-      // 768px is the default for `md` in Tailwind
-      if (window.innerWidth >= 768) {
-        setAccordionDefaultValue('r2-metrics');
-      } else {
-        setAccordionDefaultValue('');
+      if (user) {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('id, role') // Select the role
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching profile:', error);
+        } else {
+          setProfile(profileData);
+        }
       }
+      setLoading(false);
     };
+    getUserAndProfile();
+  }, [supabase]);
 
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
+  if (loading) {
+    return <div className="text-center p-8">加载中...</div>;
+  }
 
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, [supabase.auth]);
-
-  const handleUploadSuccess = (newFiles: R2File[]) => {
-    setNewlyUploadedFiles(newFiles);
-  };
+  if (!user) {
+    // This case should ideally not be reached if rendered by page.tsx
+    return <div className="text-center p-8 text-destructive">未授权访问</div>;
+  }
 
   return (
-    <div className="w-full space-y-8">
-      <Accordion type="single" collapsible className="w-full" value={accordionDefaultValue} onValueChange={setAccordionDefaultValue}>
-        <AccordionItem value="r2-metrics">
-          <AccordionTrigger>
-            <h2 className="text-2xl font-bold tracking-tight">用量概览</h2>
-          </AccordionTrigger>
-          <AccordionContent>
-            <R2Metrics />
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-      <UploadForm onUploadSuccess={handleUploadSuccess} currentPrefix={currentPrefix} />
-      <div className="mt-8">
-        <FileList user={user} newlyUploadedFiles={newlyUploadedFiles} currentPrefix={currentPrefix} setCurrentPrefix={setCurrentPrefix} />
-      </div>
+    <div className="w-full max-w-5xl mx-auto p-4">
+      <EnvVarWarning />
+      <R2Metrics />
+      <UploadForm
+        currentPrefix={currentPrefix}
+        onUploadSuccess={(newFile) => {
+          setNewlyUploadedFiles((prev) => [...prev, newFile]);
+        }}
+      />
+      <FileList
+        user={user}
+        profile={profile}
+        newlyUploadedFiles={newlyUploadedFiles}
+        currentPrefix={currentPrefix}
+        setCurrentPrefix={setCurrentPrefix}
+      />
     </div>
   );
 }

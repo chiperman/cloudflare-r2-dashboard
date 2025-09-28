@@ -122,6 +122,7 @@ interface FileListResponse {
 
 interface FileListProps {
   user: User | null;
+  profile: { role: string } | null; // Add this line
   newlyUploadedFiles: R2File[];
   currentPrefix: string;
   setCurrentPrefix: (prefix: string) => void;
@@ -129,6 +130,7 @@ interface FileListProps {
 
 export function FileList({
   user,
+  profile,
   newlyUploadedFiles,
   currentPrefix,
   setCurrentPrefix,
@@ -856,9 +858,9 @@ export function FileList({
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive cursor-pointer"
-                            disabled={Boolean(!file.user_id || (user && user.id !== file.user_id))}
+                            disabled={!profile?.role || (profile.role !== 'admin' && (!file.user_id || (user && user.id !== file.user_id)))}
                             title={
-                              !file.user_id || (user && user.id !== file.user_id)
+                              !profile?.role || (profile.role !== 'admin' && (!file.user_id || (user && user.id !== file.user_id)))
                                 ? '你没有删除此文件的权限'
                                 : '删除文件'
                             }
@@ -1147,11 +1149,9 @@ export function FileList({
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="destructive"
-                        disabled={Boolean(
-                          !previewFile.user_id || (user && user.id !== previewFile.user_id)
-                        )}
+                        disabled={!profile?.role || (profile.role !== 'admin' && (!previewFile.user_id || (user && user.id !== previewFile.user_id)))}
                         title={
-                          !previewFile.user_id || (user && user.id !== previewFile.user_id)
+                          !profile?.role || (profile.role !== 'admin' && (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
                             ? '你没有删除此文件的权限'
                             : '删除文件'
                         }

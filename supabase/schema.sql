@@ -115,3 +115,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_files_key ON files USING btree (key)
 -- 注意: Supabase 默认可能已经在主键或外键上创建了一些索引，请先检查。
 -- 这个复合索引可以同时优化 `key` 的筛选和 `uploaded_at` 的排序
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_files_key_uploaded_at ON files (key, uploaded_at);
+
+-- 6. 用户权限系统
+-- 为 public.profiles 表添加 'role' 字段以实现 RBAC (基于角色的访问控制)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
