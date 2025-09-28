@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
       .from('files')
       .select('*', { count: 'exact' })
       .like('key', `${prefix}%`)
-      .not('key', 'like', `${prefix}%/%`);
+      .not('key', 'like', `${prefix}%/%`)
+      .neq('content_type', 'application/x-directory'); // Exclude folder records
 
     // Add search condition if a search term is provided
     if (search) {

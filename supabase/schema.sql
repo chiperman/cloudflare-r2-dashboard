@@ -81,17 +81,27 @@ AS $$
 BEGIN
     -- 这是函数的核心逻辑
     RETURN QUERY
+    -- Part 1: Find directories that contain files
     SELECT DISTINCT
-        -- 1. 获取前缀之后的部分
-        --    示例: 如果 key 是 'a/b/c.txt' 且 p_prefix 是 'a/'，则子字符串是 'b/c.txt'
-        -- 2. 按 '/' 分割子字符串并获取第一部分
-        --    示例: split_part('b/c.txt', '/', 1) 返回 'b'
         split_part(substring(files.key from (length(p_prefix) + 1)), '/', 1)
     FROM
         files
     WHERE
-        -- 查找所有嵌套在给定前缀下的路径
-        files.key LIKE p_prefix || '%/%';
+        files.key LIKE p_prefix || '%/%'
+        AND (files.content_type IS NULL OR files.content_type != 'application/x-directory')
+
+    UNION
+
+    -- Part 2: Find empty directories (folder records)
+    SELECT
+        files.name
+    FROM
+        files
+    WHERE
+        files.key LIKE p_prefix || '%/' -- Ensure it has a trailing slash
+        AND files.content_type = 'application/x-directory'
+        -- Ensure it is a direct child, not a grandchild
+        AND files.key ~ ('^' || p_prefix || '[^/]+/$');
 END;
 $$;
 
