@@ -404,11 +404,9 @@ export function FileList({
           <Skeleton className="h-10 w-10 sm:hidden" />
         </div>
 
-        <div className="order-3 sm:order-2 w-full sm:w-auto sm:ml-auto">
-          <div className="relative w-full max-w-sm flex items-center border rounded-md h-10">
-            <Skeleton className="absolute left-3 h-5 w-5" />
-            <Skeleton className="w-full h-full ml-10 mr-20" />
-            <Skeleton className="absolute right-3 h-5 w-5" />
+        <div className="order-3 sm:order-2 w-full sm:w-96 sm:ml-auto">
+          <div className="relative w-full max-w-sm flex items-center border border-input rounded-md h-10">
+            <Skeleton className="h-full w-full" />
           </div>
         </div>
 
@@ -622,7 +620,7 @@ export function FileList({
           </div>
         </div>
 
-        <div className="order-3 sm:order-2 w-full sm:w-auto sm:ml-auto">
+        <div className="order-3 sm:order-2 w-full sm:w-96 sm:ml-auto">
           <div className="relative w-full max-w-sm flex items-center border border-input rounded-md focus-within:border-primary">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input

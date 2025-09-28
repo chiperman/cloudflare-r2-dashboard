@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function ThemeAwareImage() {
   const { theme } = useTheme();
@@ -13,7 +14,8 @@ export function ThemeAwareImage() {
   }, []);
 
   if (!mounted) {
-    return null; 
+    // Respect the aspect ratio 4:3 and apply same classes as the image
+    return <Skeleton className="w-[800px] h-[600px] max-w-full rounded-lg shadow-lg mt-8" />;
   }
 
   const src = theme === 'dark' ? '/black.png' : '/white.png';
@@ -25,6 +27,7 @@ export function ThemeAwareImage() {
       width={800}
       height={600}
       className="rounded-lg shadow-lg mt-8"
+      priority
     />
   );
 }
