@@ -1113,6 +1113,7 @@ export function FileList({
                 ) : (
                   <div className="relative w-full h-full max-w-[70vh] max-h-[70vh]">
                     <Image
+                      key={previewFile.key}
                       src={previewFile.url}
                       alt={previewFile.key}
                       fill
