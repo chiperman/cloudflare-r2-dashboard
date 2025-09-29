@@ -113,9 +113,10 @@ export async function DELETE(request: NextRequest) {
     const supabase = createSupabaseAdminClient();
     const bucketName = process.env.R2_BUCKET_NAME;
     let continuationToken: string | undefined = undefined;
+    let listCommand: ListObjectsV2Command;
 
     while (true) {
-      const listCommand = new ListObjectsV2Command({
+      listCommand = new ListObjectsV2Command({
         Bucket: bucketName,
         Prefix: prefix,
         ContinuationToken: continuationToken,

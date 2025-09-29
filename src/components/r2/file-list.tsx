@@ -858,7 +858,7 @@ export function FileList({
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive cursor-pointer"
-                            disabled={!profile?.role || (profile.role !== 'admin' && (!file.user_id || (user && user.id !== file.user_id)))}
+                            disabled={Boolean(!profile?.role || (profile.role !== 'admin' && (!file.user_id || (user && user.id !== file.user_id))))}
                             title={
                               !profile?.role || (profile.role !== 'admin' && (!file.user_id || (user && user.id !== file.user_id)))
                                 ? '你没有删除此文件的权限'
@@ -1149,7 +1149,7 @@ export function FileList({
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="destructive"
-                        disabled={!profile?.role || (profile.role !== 'admin' && (!previewFile.user_id || (user && user.id !== previewFile.user_id)))}
+                        disabled={Boolean(!profile?.role || (profile.role !== 'admin' && (!previewFile.user_id || (user && user.id !== previewFile.user_id))))}
                         title={
                           !profile?.role || (profile.role !== 'admin' && (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
                             ? '你没有删除此文件的权限'
