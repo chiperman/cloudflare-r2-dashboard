@@ -364,6 +364,25 @@ export function FileList({
     }
   };
 
+  const handleBulkDownload = () => {
+    const filesToDownload = files.filter((f) => selectedKeys.has(f.key));
+    if (filesToDownload.length === 0) return;
+
+    filesToDownload.forEach((file) => {
+      const link = document.createElement('a');
+      link.href = file.url;
+      link.download = file.key;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    toast({
+      title: '下载开始',
+      description: `已开始下载 ${filesToDownload.length} 个文件。`,
+    });
+  };
+
   const handleSelect = (key: string) => {
     setSelectedKeys((prev) => {
       const next = new Set(prev);
@@ -1057,7 +1076,11 @@ export function FileList({
         </div>
       </div>
       {selectedKeys.size > 0 && (
-        <div className="fixed bottom-10 right-10 z-50">
+        <div className="fixed bottom-10 right-10 z-50 flex flex-col gap-2">
+          <Button size="lg" onClick={handleBulkDownload}>
+            <Download className="h-5 w-5 mr-2" />
+            下载选中 ({selectedKeys.size})
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="lg">
