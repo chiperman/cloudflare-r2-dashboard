@@ -63,10 +63,10 @@ export function AuthDialogManager() {
   return (
     <>
       <div className="flex gap-2">
-        <Button size="sm" variant="ghost" onClick={() => setLoginOpen(true)}>
+        <Button size="sm" variant="outline" onClick={() => setLoginOpen(true)}>
           登录
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => setSignUpOpen(true)}>
+        <Button size="sm" variant="default" onClick={() => setSignUpOpen(true)}>
           注册
         </Button>
       </div>

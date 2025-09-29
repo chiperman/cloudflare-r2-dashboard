@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client';
 import { FileList } from '@/components/r2/file-list';
 import { UploadForm } from '@/components/r2/upload-form';
 import { R2Metrics } from '@/components/r2/r2-metrics';
-import { EnvVarWarning } from '@/components/env-var-warning';
 
 interface UserProfile {
   id: string;
@@ -56,7 +55,6 @@ export function HomeClientContent() {
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4">
-      <EnvVarWarning />
       <R2Metrics />
       <UploadForm
         currentPrefix={currentPrefix}
