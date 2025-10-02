@@ -14,11 +14,37 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer';
 import { LogoutButton } from './logout-button';
+import { useEffect, useState } from 'react';
+import { User } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export function MobileMenu() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const supabase = createClient();
+  const router = useRouter();
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      router.refresh();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase.auth, router]);
+
+  const handleLogoutSuccess = () => {
+    setIsDrawerOpen(false);
+  };
+
   return (
     <div className="md:hidden">
-      <Drawer>
+      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
         <DrawerTrigger asChild>
           <Button variant="ghost" size="sm" aria-label="Toggle menu">
             <Menu size={20} />
@@ -41,7 +67,7 @@ export function MobileMenu() {
                 <span>查看源码</span>
               </a>
             </Button>
-            <LogoutButton />
+            {user && <LogoutButton onLogoutSuccess={handleLogoutSuccess} />}
           </div>
           <DrawerFooter>
             <DrawerClose asChild>

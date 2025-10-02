@@ -10,6 +10,13 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DonutChart } from "@/components/ui/donut-chart";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { useEffect, useState } from 'react';
 
 interface Metrics {
   storage: {
@@ -61,74 +68,109 @@ function MetricCardSkeleton() {
     )
 }
 
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+    const handleResize = () => setIsDesktop(mediaQuery.matches);
+
+    handleResize();
+    mediaQuery.addEventListener('change', handleResize);
+    return () => mediaQuery.removeEventListener('change', handleResize);
+  }, []);
+
+  return isDesktop;
+}
+
 export function R2Metrics() {
+  const isDesktop = useIsDesktop();
   const { data: metrics, error, isLoading } = useSWR<Metrics>("/api/r2-metrics", fetcher);
 
-  if (isLoading) {
+  if (isDesktop === null) {
     return (
-        <div className="grid gap-4 md:grid-cols-3">
-            <MetricCardSkeleton />
-            <MetricCardSkeleton />
-            <MetricCardSkeleton />
+      <div className="w-full mb-4">
+        <div className="flex flex-1 items-center justify-between py-4 border-b">
+          <span className="text-base font-medium">用量概览</span>
         </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="text-red-500 border border-red-500/50 bg-red-500/10 rounded-lg p-4">
-        <p className="font-bold">无法加载用量数据</p>
-        <p className="text-sm">{error.message}</p>
       </div>
     );
   }
-  
-  if (!metrics) {
-    return null;
-  }
-
-  const storagePercentage = (metrics.storage.used / metrics.storage.total) * 100;
-  const classAPercentage = (metrics.classA.count / metrics.classA.total) * 100;
-  const classBPercentage = (metrics.classB.count / metrics.classB.total) * 100;
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">存储用量</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-row items-center gap-4 p-6">
-          <DonutChart value={storagePercentage} size={70} strokeWidth={8} />
-          <div>
-            <p className="text-xl font-bold">{formatBytes(metrics.storage.used)}</p>
-            <p className="text-xs text-muted-foreground">/ {formatBytes(metrics.storage.total)}</p>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">Class A 操作 (每月)</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-row items-center gap-4 p-6">
-          <DonutChart value={classAPercentage} size={70} strokeWidth={8} />
-           <div>
-            <p className="text-xl font-bold">{metrics.classA.count.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">/ {metrics.classA.total.toLocaleString()}</p>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">Class B 操作 (每月)</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-row items-center gap-4 p-6">
-          <DonutChart value={classBPercentage} size={70} strokeWidth={8} />
-           <div>
-            <p className="text-xl font-bold">{metrics.classB.count.toLocaleString()}</p>
-            <p className="text-xs text-muted-foreground">/ {metrics.classB.total.toLocaleString()}</p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <Accordion type="single" collapsible className="w-full mb-4" defaultValue={isDesktop ? "item-1" : undefined}>
+      <AccordionItem value="item-1">
+        <AccordionTrigger>用量概览</AccordionTrigger>
+        <AccordionContent>
+          {(() => {
+            if (isLoading) {
+              return (
+                <div className="grid gap-4 md:grid-cols-3 pt-4">
+                  <MetricCardSkeleton />
+                  <MetricCardSkeleton />
+                  <MetricCardSkeleton />
+                </div>
+              );
+            }
+            if (error) {
+              return (
+                <div className="text-red-500 border border-red-500/50 bg-red-500/10 rounded-lg p-4 mt-4">
+                  <p className="font-bold">无法加载用量数据</p>
+                  <p className="text-sm">{error.message}</p>
+                </div>
+              );
+            }
+            if (!metrics) {
+              return null;
+            }
+
+            const storagePercentage = (metrics.storage.used / metrics.storage.total) * 100;
+            const classAPercentage = (metrics.classA.count / metrics.classA.total) * 100;
+            const classBPercentage = (metrics.classB.count / metrics.classB.total) * 100;
+
+            return (
+              <div className="grid gap-4 md:grid-cols-3 pt-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">存储用量</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-row items-center gap-4 p-6">
+                    <DonutChart value={storagePercentage} size={70} strokeWidth={8} />
+                    <div>
+                      <p className="text-xl font-bold">{formatBytes(metrics.storage.used)}</p>
+                      <p className="text-xs text-muted-foreground">/ {formatBytes(metrics.storage.total)}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Class A 操作 (每月)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-row items-center gap-4 p-6">
+                    <DonutChart value={classAPercentage} size={70} strokeWidth={8} />
+                    <div>
+                      <p className="text-xl font-bold">{metrics.classA.count.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">/ {metrics.classA.total.toLocaleString()}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium">Class B 操作 (每月)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-row items-center gap-4 p-6">
+                    <DonutChart value={classBPercentage} size={70} strokeWidth={8} />
+                    <div>
+                      <p className="text-xl font-bold">{metrics.classB.count.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">/ {metrics.classB.total.toLocaleString()}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
