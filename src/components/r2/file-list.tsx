@@ -92,6 +92,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
+
 import { Skeleton } from '@/components/ui/skeleton';
 
 import type { User } from '@supabase/supabase-js';
@@ -410,114 +411,6 @@ export function FileList({
 
   const breadcrumbParts = currentPrefix.split('/').filter((p) => p);
 
-  // 骨架屏组件
-  const FileListSkeleton = () => (
-    <>
-      {/* Breadcrumb 骨架屏 */}
-      <div className="mb-4">
-        <Skeleton className="h-6 w-32" />
-      </div>
-
-      {/* 操作栏骨架屏 */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4 sm:justify-start">
-        <div className="order-1 sm:order-1">
-          <Skeleton className="h-10 w-32 hidden sm:block" />
-          <Skeleton className="h-10 w-10 sm:hidden" />
-        </div>
-
-        <div className="order-3 sm:order-2 w-full sm:w-96 sm:ml-auto">
-          <div className="relative w-full max-w-sm flex items-center border border-input rounded-md h-10">
-            <Skeleton className="h-full w-full" />
-          </div>
-        </div>
-
-        <div className="order-2 sm:order-3">
-          <Skeleton className="h-10 w-10" />
-        </div>
-      </div>
-
-      {/* 文件列表骨架屏 */}
-      <div className="w-full border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-center">
-                <Skeleton className="h-4 w-4 mx-auto" />
-              </TableHead>
-              <TableHead className="text-center">预览</TableHead>
-              <TableHead className="text-center">名称</TableHead>
-              <TableHead className="text-center">用户</TableHead>
-              <TableHead className="text-center">上传时间</TableHead>
-              <TableHead className="text-center">文件大小</TableHead>
-              <TableHead className="text-center">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: pageSize }).map((_, index) => (
-              <TableRow key={index} className="h-[50px]">
-                <TableCell className="text-center">
-                  <Skeleton className="h-4 w-4 mx-auto" />
-                </TableCell>
-                <TableCell className="flex items-center justify-center">
-                  <Skeleton className="w-[50px] h-[50px] rounded-md" />
-                </TableCell>
-                <TableCell className="text-center">
-                  <Skeleton className="h-4 w-24 mx-auto" />
-                </TableCell>
-                <TableCell className="text-center">
-                  <Skeleton className="h-4 w-16 mx-auto" />
-                </TableCell>
-                <TableCell className="text-center">
-                  <Skeleton className="h-4 w-20 mx-auto" />
-                </TableCell>
-                <TableCell className="text-center">
-                  <Skeleton className="h-4 w-16 mx-auto" />
-                </TableCell>
-                <TableCell className="text-center">
-                  <Skeleton className="h-8 w-8 mx-auto rounded-sm" />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-
-        {/* 分页控件骨架屏 */}
-        <div className="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
-          <div className="flex w-full items-center justify-between sm:w-auto sm:gap-8">
-            <div className="flex items-center space-x-2">
-              <Skeleton className="h-4 w-16 hidden sm:block" />
-              <Skeleton className="h-8 w-[70px]" />
-              <Skeleton className="h-4 w-20" />
-            </div>
-          </div>
-          <div className="flex w-full items-center justify-center sm:w-auto">
-            <div className="hidden sm:flex">
-              <Pagination>
-                <PaginationContent className="flex items-center space-x-2">
-                  <PaginationItem>
-                    <Skeleton className="h-8 w-20" />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <Skeleton className="h-4 w-16" />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <Skeleton className="h-8 w-20" />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-            <div className="flex w-full items-center justify-between sm:hidden">
-              <Skeleton className="h-8 w-8" />
-              <Skeleton className="h-8 w-32" />
-              <Skeleton className="h-8 w-8" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-
-  if (isLoading) return <FileListSkeleton />;
   if (error) return <div className="text-center p-8 text-destructive">加载失败</div>;
 
   return (
@@ -877,9 +770,15 @@ export function FileList({
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive cursor-pointer"
-                            disabled={Boolean(!profile?.role || (profile.role !== 'admin' && (!file.user_id || (user && user.id !== file.user_id))))}
+                            disabled={Boolean(
+                              !profile?.role ||
+                                (profile.role !== 'admin' &&
+                                  (!file.user_id || (user && user.id !== file.user_id)))
+                            )}
                             title={
-                              !profile?.role || (profile.role !== 'admin' && (!file.user_id || (user && user.id !== file.user_id)))
+                              !profile?.role ||
+                              (profile.role !== 'admin' &&
+                                (!file.user_id || (user && user.id !== file.user_id)))
                                 ? '你没有删除此文件的权限'
                                 : '删除文件'
                             }
@@ -1172,9 +1071,15 @@ export function FileList({
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="destructive"
-                        disabled={Boolean(!profile?.role || (profile.role !== 'admin' && (!previewFile.user_id || (user && user.id !== previewFile.user_id))))}
+                        disabled={Boolean(
+                          !profile?.role ||
+                            (profile.role !== 'admin' &&
+                              (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
+                        )}
                         title={
-                          !profile?.role || (profile.role !== 'admin' && (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
+                          !profile?.role ||
+                          (profile.role !== 'admin' &&
+                            (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
                             ? '你没有删除此文件的权限'
                             : '删除文件'
                         }
@@ -1207,3 +1112,95 @@ export function FileList({
     </>
   );
 }
+
+export const FileListSkeleton = () => (
+  <div>
+    {/* Breadcrumb skeleton */}
+    <div className="mb-4">
+      <Skeleton className="h-6 w-32" />
+    </div>
+
+    {/* Action bar skeleton */}
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-4 sm:justify-start">
+      <div className="order-1 sm:order-1">
+        <Skeleton className="h-10 w-32 hidden sm:block" />
+        <Skeleton className="h-10 w-10 sm:hidden" />
+      </div>
+      <div className="order-3 sm:order-2 w-full sm:w-96 sm:ml-auto">
+        <div className="relative w-full max-w-sm flex items-center border border-input rounded-md h-10">
+          <Skeleton className="h-full w-full" />
+        </div>
+      </div>
+      <div className="order-2 sm:order-3">
+        <Skeleton className="h-10 w-10" />
+      </div>
+    </div>
+
+    {/* File list skeleton */}
+    <div className="w-full border rounded-lg">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-center">
+              <Skeleton className="h-4 w-4 mx-auto" />
+            </TableHead>
+            <TableHead className="text-center">预览</TableHead>
+            <TableHead className="text-center">名称</TableHead>
+            <TableHead className="text-center">用户</TableHead>
+            <TableHead className="text-center">上传时间</TableHead>
+            <TableHead className="text-center">文件大小</TableHead>
+            <TableHead className="text-center">操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 10 }).map((_, index) => (
+            <TableRow key={index} className="h-[50px]">
+              <TableCell className="text-center">
+                <Skeleton className="h-4 w-4 mx-auto" />
+              </TableCell>
+              <TableCell className="flex items-center justify-center">
+                <Skeleton className="w-[50px] h-[50px] rounded-md" />
+              </TableCell>
+              <TableCell className="text-center">
+                <Skeleton className="h-4 w-24 mx-auto" />
+              </TableCell>
+              <TableCell className="text-center">
+                <Skeleton className="h-4 w-16 mx-auto" />
+              </TableCell>
+              <TableCell className="text-center">
+                <Skeleton className="h-4 w-20 mx-auto" />
+              </TableCell>
+              <TableCell className="text-center">
+                <Skeleton className="h-4 w-16 mx-auto" />
+              </TableCell>
+              <TableCell className="text-center">
+                <Skeleton className="h-8 w-8 mx-auto rounded-sm" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      {/* Pagination skeleton */}
+      <div className="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
+        <div className="flex w-full items-center justify-between sm:w-auto sm:gap-8">
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-4 w-16 hidden sm:block" />
+            <Skeleton className="h-8 w-[70px]" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+        </div>
+        <div className="flex w-full items-center justify-center sm:w-auto">
+          <div className="hidden sm:flex">
+            <Skeleton className="h-8 w-48" />
+          </div>
+          <div className="flex w-full items-center justify-between sm:hidden">
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-8 w-8" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);

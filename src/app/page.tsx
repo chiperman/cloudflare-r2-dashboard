@@ -17,7 +17,7 @@ export default async function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center">
       <div className="flex-1 w-full flex flex-col gap-12 items-center">
-        <div className="flex-1 flex flex-col gap-10 max-w-5xl w-full p-5 items-center">
+        <div className="flex-1 flex flex-col gap-10 max-w-5xl w-full items-center">
           {user ? (
             <HomeClientContent />
           ) : (

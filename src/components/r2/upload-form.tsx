@@ -6,6 +6,7 @@ import { Upload, File as FileIcon, X, CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
 import { R2File } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const MAX_SIZE_MB = 30;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -18,7 +19,6 @@ interface UploadableFile {
   status: 'pending' | 'uploading' | 'success' | 'error';
   error?: string;
 }
-
 
 export function UploadForm({
   onUploadSuccess,
@@ -219,7 +219,7 @@ export function UploadForm({
   const pendingFilesCount = files.filter((f) => f.status === 'pending').length;
 
   return (
-    <div className="w-full mx-auto">
+    <div className="w-full mx-auto mb-4">
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
@@ -283,13 +283,32 @@ export function UploadForm({
         </div>
       )}
 
-      <button
-        onClick={handleUploadAll}
-        disabled={pendingFilesCount === 0 || isUploading}
-        className="mt-6 w-full bg-primary text-primary-foreground font-semibold py-2 px-4 rounded-lg transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90"
-      >
-        {isUploading ? '上传中...' : `上传 ${pendingFilesCount} 个文件`}
-      </button>
+      <div className="pb-4 border-b">
+        <button
+          onClick={handleUploadAll}
+          disabled={pendingFilesCount === 0 || isUploading}
+          className="mt-6 w-full bg-primary text-primary-foreground font-semibold py-2 px-4 rounded-lg transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90"
+        >
+          {isUploading ? '上传中...' : `上传 ${pendingFilesCount} 个文件`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function UploadFormSkeleton() {
+  return (
+    <div className="w-full mx-auto mb-4">
+      <div className="border-2 border-dashed rounded-lg p-8 text-center">
+        <div className="flex flex-col items-center gap-2">
+          <Skeleton className="h-8 w-8" />
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+      </div>
+      <div className="pb-4 border-b">
+        <Skeleton className="h-10 w-full rounded-lg mt-6" />
+      </div>
     </div>
   );
 }
