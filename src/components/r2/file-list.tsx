@@ -143,9 +143,17 @@ export function FileList({
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [searchScope, setSearchScope] = useState('current'); // 'current' or 'global'
 
-  const swrKey = `/api/files?limit=${pageSize}&prefix=${
-    searchScope === 'global' ? '' : currentPrefix
-  }&page=${currentPage}&search=${debouncedSearchTerm}`;
+  // Determine the SWR key based on whether a search is active
+  const isSearching = debouncedSearchTerm.length > 0;
+  const swrKey = (() => {
+    if (isSearching) {
+      const apiPrefix = searchScope === 'global' ? '' : currentPrefix;
+      return `/api/files?limit=${pageSize}&prefix=${apiPrefix}&page=${currentPage}&search=${debouncedSearchTerm}&scope=${searchScope}`;
+    }
+    // Default browsing mode
+    return `/api/files?limit=${pageSize}&prefix=${currentPrefix}&page=${currentPage}&search=`;
+  })();
+
   const { data, error, isLoading, mutate } = useSWR<FileListResponse>(swrKey, fetcher);
 
   const files = useMemo(() => data?.files || [], [data]);

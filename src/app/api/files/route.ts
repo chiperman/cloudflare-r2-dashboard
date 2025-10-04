@@ -23,11 +23,100 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get('limit') || '10', 10);
   const page = parseInt(searchParams.get('page') || '1', 10);
   const search = searchParams.get('search') || '';
+  const scope = searchParams.get('scope') || 'current'; // New: get scope, default to current
 
   const rangeFrom = (page - 1) * limit;
   const rangeTo = rangeFrom + limit - 1;
 
   try {
+    // --- Start of new search logic ---
+    if (search) {
+      let filesQuery = supabase.from('files').select('*', { count: 'exact' });
+
+      // Global search: search by name across all files
+      if (scope === 'global') {
+        filesQuery = filesQuery.like('name', `%${search}%`);
+      } else {
+        // Current folder search: search by name within the current prefix, non-recursively
+        filesQuery = filesQuery
+          .like('key', `${prefix}%`)
+          .not('key', 'like', `${prefix}%/%`)
+          .like('name', `%${search}%`);
+      }
+
+      // Exclude directory placeholders from search results
+      filesQuery = filesQuery.neq('content_type', 'application/x-directory');
+
+      // Add order and range for pagination
+      const { data: filesData, error: filesError, count } = await filesQuery
+        .order('uploaded_at', { ascending: false })
+        .range(rangeFrom, rangeTo);
+
+      if (filesError) throw filesError;
+
+      // When searching, always return an empty directories array
+      const directories: string[] = [];
+
+      // --- Post-processing logic for files (same as before) ---
+      const uniqueUserIds = [...new Set(filesData.map((file) => file.user_id).filter(Boolean))];
+      let profilesMap = new Map();
+      if (uniqueUserIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, display_name, email')
+          .in('id', uniqueUserIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        } else {
+          profilesData.forEach((profile) => profilesMap.set(profile.id, profile));
+        }
+      }
+
+      const files = filesData.map((file) => {
+        const fileNameOnly = file.name;
+        const fileExtension = fileNameOnly.split('.').pop()?.toLowerCase();
+        let thumbnailUrl = '/file.svg';
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        const videoExtensions = ['mp4', 'webm', 'mov', 'ogg'];
+
+        if (fileExtension && imageExtensions.includes(fileExtension)) {
+          thumbnailUrl = `/api/images/thumbnails/${fileNameOnly}`;
+        } else if (fileExtension && videoExtensions.includes(fileExtension)) {
+          thumbnailUrl = '/video.svg';
+        }
+
+        const profile = profilesMap.get(file.user_id);
+        const uploader = profile?.display_name || profile?.email || '未知';
+
+        return {
+          key: file.name,
+          size: file.size,
+          uploadedAt: file.uploaded_at,
+          url: `/api/images/${file.key}`,
+          thumbnailUrl: thumbnailUrl,
+          user_id: file.user_id,
+          uploader: uploader,
+          blurDataURL: file.blur_data_url,
+        };
+      });
+
+      const totalCount = count || 0;
+      const isTruncated = rangeTo < totalCount - 1;
+      const totalPages = Math.ceil(totalCount / limit);
+
+      return NextResponse.json({
+        files,
+        directories,
+        isTruncated,
+        totalCount,
+        totalPages,
+        currentPage: page,
+      });
+    }
+    // --- End of new search logic ---
+
+    // --- Original logic for browsing (no search term) ---
     // Base query for files
     let filesQuery = supabase
       .from('files')
@@ -35,11 +124,6 @@ export async function GET(request: NextRequest) {
       .like('key', `${prefix}%`)
       .not('key', 'like', `${prefix}%/%`)
       .neq('content_type', 'application/x-directory'); // Exclude folder records
-
-    // Add search condition if a search term is provided
-    if (search) {
-      filesQuery = filesQuery.like('name', `%${search}%`);
-    }
 
     // Add order and range
     filesQuery = filesQuery.order('uploaded_at', { ascending: false }).range(rangeFrom, rangeTo);
