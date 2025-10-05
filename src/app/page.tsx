@@ -30,21 +30,42 @@ export default async function Home() {
               <div className="w-full max-w-2xl mt-12">
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="item-1">
-                    <AccordionTrigger>这是什么项目？</AccordionTrigger>
+                    <AccordionTrigger>R2-dashboard是干嘛的？</AccordionTrigger>
                     <AccordionContent>
-                      这是一个用于管理 Cloudflare R2 存储文件的现代化 Web 面板，提供安全认证、文件上传、预览和管理等功能。
+                      一个为您专属打造的 Cloudflare R2
+                      私人图片存储库。我们提供了一个比云服务商后台更美观、更易用的界面，让您能像管理本地文件夹一样，轻松管理云端图片。
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="item-2">
-                    <AccordionTrigger>使用了哪些技术？</AccordionTrigger>
+                    <AccordionTrigger>您可以做什么？</AccordionTrigger>
                     <AccordionContent>
-                      本项目采用 Next.js, Tailwind CSS, shadcn/ui, Supabase (认证与数据库) 和 AWS SDK (用于 R2 操作) 构建。
+                      <ul className="list-disc pl-6 space-y-2">
+                        <li>
+                          <b>轻松上传</b>：只需将图片拖拽到指定区域，即可完成上传，支持批量操作。
+                        </li>
+                        <li>
+                          <b>直观浏览</b>
+                          ：所有图片以缩略图形式清晰展示，支持文件夹层级，让文件井井有条。
+                        </li>
+                        <li>
+                          <b>便捷分享</b>
+                          ：一键复制每张图片的公开访问链接，方便您在任何地方引用和分享。
+                        </li>
+                        <li>
+                          <b>快速定位</b>：内置强大的全局和文件夹内搜索功能，帮您瞬间找到目标图片。
+                        </li>
+                        <li>
+                          <b>权限控制</b>：用户仅可以删除有权限的文件。
+                        </li>
+                      </ul>
                     </AccordionContent>
                   </AccordionItem>
                   <AccordionItem value="item-3">
-                    <AccordionTrigger>如何开始使用？</AccordionTrigger>
+                    <AccordionTrigger>数据安全与隐私</AccordionTrigger>
                     <AccordionContent>
-                      您需要克隆项目仓库，根据 .env.example 文件配置好您的 Cloudflare R2 和 Supabase 项目密钥，然后便可一键部署至 Vercel 或在本地运行。
+                      我们极其重视您的数据安全。您的所有文件都直接存储在您自己的 Cloudflare R2
+                      存储桶中，本网站不持有您的任何文件实体。访问权限由业界领先的 Supabase Auth
+                      进行身份认证，确保您的数据只属于您自己。
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>

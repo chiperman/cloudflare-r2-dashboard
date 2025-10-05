@@ -78,7 +78,7 @@ export function R2Metrics() {
       collapsible
       className="w-full mb-4"
       value={value}
-      onValueChange={(v) => v && setValue(v)}
+      onValueChange={setValue}
     >
       <AccordionItem value="item-1">
         <AccordionTrigger>
