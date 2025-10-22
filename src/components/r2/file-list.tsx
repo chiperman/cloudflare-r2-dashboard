@@ -185,6 +185,8 @@ export function FileList({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCreateFolderDrawerOpen, setIsCreateFolderDrawerOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleOpenPreview = (file: R2File) => {
     const index = files.findIndex((f) => f.key === file.key);
@@ -313,6 +315,7 @@ export function FileList({
     const fileToDelete = files.find((f) => f.key === fileKey);
     if (!fileToDelete) return;
 
+    setIsDeleting(true);
     try {
       const fullKey = `${currentPrefix}${fileKey}`;
       const response = await fetch(`/api/files`, {
@@ -327,6 +330,9 @@ export function FileList({
         throw new Error(errorData.error || '删除文件失败。');
       }
       toast({ title: '已删除', description: `${fileKey} 已被删除。` });
+      if (previewFile && previewFile.key === fileKey) {
+        setPreviewFile(null);
+      }
       mutate();
     } catch (err) {
       toast({
@@ -334,6 +340,8 @@ export function FileList({
         description: err instanceof Error ? err.message : '未知错误',
         variant: 'destructive',
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -346,6 +354,7 @@ export function FileList({
       thumbnailUrl: f.thumbnailUrl,
     }));
 
+    setIsDeleting(true);
     try {
       const response = await fetch('/api/files', {
         method: 'DELETE',
@@ -370,6 +379,8 @@ export function FileList({
         description: err instanceof Error ? err.message : '未知错误',
         variant: 'destructive',
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -377,19 +388,35 @@ export function FileList({
     const filesToDownload = files.filter((f) => selectedKeys.has(f.key));
     if (filesToDownload.length === 0) return;
 
-    filesToDownload.forEach((file) => {
-      const link = document.createElement('a');
-      link.href = file.url;
-      link.download = file.key;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
+    setIsDownloading(true);
+    try {
+      filesToDownload.forEach((file) => {
+        const link = document.createElement('a');
+        link.href = file.url;
+        link.download = file.key;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
 
-    toast({
-      title: '下载开始',
-      description: `已开始下载 ${filesToDownload.length} 个文件。`,
-    });
+      toast({
+        title: '下载开始',
+        description: `已开始下载 ${filesToDownload.length} 个文件。`,
+      });
+    } catch (error) {
+      console.error('Error downloading files:', error);
+      toast({
+        title: '下载失败',
+        description: '文件下载失败。',
+        variant: 'destructive',
+      });
+      setIsDownloading(false);
+      return;
+    }
+
+    setTimeout(() => {
+      setIsDownloading(false);
+    }, 3000);
   };
 
   const handleSelect = (key: string) => {
@@ -778,11 +805,13 @@ export function FileList({
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive cursor-pointer"
-                            disabled={Boolean(
-                              !profile?.role ||
-                                (profile.role !== 'admin' &&
-                                  (!file.user_id || (user && user.id !== file.user_id)))
-                            )}
+                            disabled={
+                              Boolean(
+                                !profile?.role ||
+                                  (profile.role !== 'admin' &&
+                                    (!file.user_id || (user && user.id !== file.user_id)))
+                              ) || isDeleting
+                            }
                             title={
                               !profile?.role ||
                               (profile.role !== 'admin' &&
@@ -792,7 +821,7 @@ export function FileList({
                             }
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            <span>删除</span>
+                            <span>{isDeleting ? '删除中...' : '删除'}</span>
                           </DropdownMenuItem>
                         </AlertDialogTrigger>
                       </DropdownMenuContent>
@@ -806,8 +835,11 @@ export function FileList({
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>取消</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(file.key)}>
-                          删除
+                        <AlertDialogAction
+                          onClick={() => handleDelete(file.key)}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? '删除中...' : '删除'}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -984,15 +1016,15 @@ export function FileList({
       </div>
       {selectedKeys.size > 0 && (
         <div className="fixed bottom-10 right-10 z-50 flex flex-col gap-2">
-          <Button size="lg" onClick={handleBulkDownload}>
+          <Button size="lg" onClick={handleBulkDownload} disabled={isDownloading || isDeleting}>
             <Download className="h-5 w-5 mr-2" />
-            下载选中 ({selectedKeys.size})
+            {isDownloading ? "下载中..." : `下载选中 (${selectedKeys.size})`}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="lg">
+              <Button variant="destructive" size="lg" disabled={isDeleting || isDownloading}>
                 <Trash2 className="h-5 w-5 mr-2" />
-                删除选中 ({selectedKeys.size})
+                {isDeleting ? "删除中..." : `删除选中 (${selectedKeys.size})`}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -1004,7 +1036,13 @@ export function FileList({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>取消</AlertDialogCancel>
-                <AlertDialogAction onClick={handleBulkDelete}>删除</AlertDialogAction>
+                <AlertDialogAction
+                  onClick={handleBulkDelete}
+                  className="bg-red-500 text-white hover:bg-red-600"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -1079,11 +1117,14 @@ export function FileList({
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="destructive"
-                        disabled={Boolean(
-                          !profile?.role ||
-                            (profile.role !== 'admin' &&
-                              (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
-                        )}
+                        disabled={
+                          Boolean(
+                            !profile?.role ||
+                              (profile.role !== 'admin' &&
+                                (!previewFile.user_id ||
+                                  (user && user.id !== previewFile.user_id)))
+                          ) || isDeleting
+                        }
                         title={
                           !profile?.role ||
                           (profile.role !== 'admin' &&
@@ -1092,8 +1133,14 @@ export function FileList({
                             : '删除文件'
                         }
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        删除
+                        {isDeleting ? (
+                          '删除中...'
+                        ) : (
+                          <>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            删除
+                          </>
+                        )}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -1105,8 +1152,11 @@ export function FileList({
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>取消</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(previewFile.key)}>
-                          删除
+                        <AlertDialogAction
+                          onClick={() => handleDelete(previewFile.key)}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? '删除中...' : '删除'}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
