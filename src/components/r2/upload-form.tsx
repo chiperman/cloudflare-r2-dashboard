@@ -341,7 +341,7 @@ export function UploadForm({
         return prevFiles.filter((file) => file.id !== id);
       });
     },
-    [files, ffmRef, setFfmpegLoaded, toast]
+    [files, ffmpegRef, setFfmpegLoaded, toast]
   );
 
   const uploadFile = (fileToUpload: UploadableFile): Promise<R2File> => {
