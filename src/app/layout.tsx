@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     'An intuitive dashboard to easily upload, view, and manage your files and buckets on Cloudflare R2.',
   icons: {
     icon: [
-      { url: '/favicon.ico?v=1', sizes: 'any' },
+      { url: '/my-favicon.ico?v=1', sizes: 'any' },
       { url: '/favico-16x16.png?v=1', sizes: '16x16', type: 'image/png' },
       { url: '/favico-32x32.png?v=1', sizes: '32x32', type: 'image/png' },
       { url: '/favico-48x48.png?v=1', sizes: '48x48', type: 'image/png' },
