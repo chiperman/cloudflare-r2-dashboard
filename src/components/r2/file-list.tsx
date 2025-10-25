@@ -94,19 +94,11 @@ import {
 } from '@/components/ui/breadcrumb';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatBytes } from '@/lib/utils';
 
 import type { User } from '@supabase/supabase-js';
 import { R2File } from '@/lib/types';
 
-// Utility function to format bytes
-function formatBytes(bytes: number, decimals = 2) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
 
 // SWR fetcher
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
