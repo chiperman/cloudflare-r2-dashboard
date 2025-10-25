@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useDropzone, FileRejection } from 'react-dropzone';
 import { Upload, File as FileIcon, X, CheckCircle } from 'lucide-react';
@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
 import { R2File } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import heic2any from 'heic2any';
+import { formatBytes } from '@/lib/utils';
 
 const MAX_SIZE_MB = 30;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -18,9 +18,10 @@ interface UploadableFile {
   id: string;
   file: File;
   progress: number;
-  status: 'pending' | 'uploading' | 'success' | 'error';
+  status: 'pending' | 'uploading' | 'success' | 'error' | 'converting';
   error?: string;
   preview?: string;
+  isConverting?: boolean;
 }
 
 export function UploadForm({
@@ -32,9 +33,37 @@ export function UploadForm({
 }) {
   const [files, setFiles] = useState<UploadableFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const convertingFileIdRef = useRef<string | null>(null);
+  const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
+  const [modulesLoaded, setModulesLoaded] = useState(false);
+  const ffmpegRef = useRef<any | null>(null);
+  const conversionControllersRef = useRef(new Map<string, AbortController>());
   const { toast } = useToast();
 
+  const [heic2anyInstance, setHeic2anyInstance] = useState<any>(null);
+  const [FFmpegInstance, setFFmpegInstance] = useState<any>(null);
+  const [fetchFileInstance, setFetchFileInstance] = useState<any>(null);
+
   useEffect(() => {
+    if (typeof window !== 'undefined' && !modulesLoaded) {
+      Promise.all([
+        import('heic2any').then((mod) => setHeic2anyInstance(() => mod.default)),
+        import('@ffmpeg/ffmpeg').then((mod) => setFFmpegInstance(() => mod.FFmpeg)),
+        import('@ffmpeg/util').then((mod) => setFetchFileInstance(() => mod.fetchFile)),
+      ])
+        .then(() => {
+          setModulesLoaded(true);
+        })
+        .catch((e) => {
+          console.error('Failed to load dynamic modules:', e);
+          toast({
+            title: '加载必要模块失败',
+            description: '部分上传功能可能不可用。',
+            variant: 'destructive',
+          });
+        });
+    }
+
     // Cleanup object URLs on unmount
     return () => {
       files.forEach((uploadableFile) => {
@@ -43,15 +72,157 @@ export function UploadForm({
         }
       });
     };
-  }, [files]);
+  }, [files, modulesLoaded, toast]);
+
+  const loadFfmpeg = async () => {
+    if (ffmpegRef.current || !FFmpegInstance) return;
+    toast({
+      title: '正在加载视频转换工具...',
+      description: '首次使用可能需要一些时间，请耐心等待。',
+      duration: 5000,
+    });
+    const ffmpeg = new FFmpegInstance({
+      coreURL: '/ffmpeg-core.js',
+      wasmURL: '/ffmpeg-core.wasm',
+      workerURL: '/ffmpeg-core.worker.js',
+    });
+
+    ffmpeg.on('log', ({ message }: { message: string }) => {
+      console.log('[ffmpeg log]', message);
+    });
+    ffmpeg.on('progress', ({ progress }: { progress: number; time: number }) => {
+      const convertingId = convertingFileIdRef.current;
+      if (convertingId && progress >= 0 && progress <= 1) {
+        const progressPercent = Math.round(progress * 100);
+        setFiles((prevFiles) =>
+          prevFiles.map((f) =>
+            f.id === convertingId ? { ...f, progress: progressPercent } : f
+          )
+        );
+      }
+    });
+    try {
+      await ffmpeg.load();
+      ffmpegRef.current = ffmpeg;
+      setFfmpegLoaded(true);
+      toast({
+        title: '视频转换工具加载成功',
+        description: '现在可以上传 MOV 视频了。',
+      });
+    } catch (e) {
+      console.error('Failed to load FFmpeg:', e);
+      toast({
+        title: '视频转换工具加载失败',
+        description: 'MOV 视频转换功能将不可用。',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (modulesLoaded && !ffmpegLoaded) {
+      loadFfmpeg();
+    }
+  }, [modulesLoaded, ffmpegLoaded, FFmpegInstance]);
+
+  const processFile = async (file: File, signal?: AbortSignal): Promise<UploadableFile> => {
+    const isHeic =
+      file.type === 'image/heic' ||
+      file.type === 'image/heif' ||
+      file.name.toLowerCase().endsWith('.heic');
+    const isMov = file.type === 'video/quicktime' || file.name.toLowerCase().endsWith('.mov');
+
+    let processedFile = file;
+    let error;
+    let status: UploadableFile['status'] = 'pending';
+    let isConverting = false;
+
+    if (isHeic) {
+      if (!heic2anyInstance) {
+        error = 'HEIC 转换模块未加载。';
+        status = 'error';
+      } else {
+        try {
+          const convertedBlob = await heic2anyInstance({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: 0.8,
+          });
+          const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+          processedFile = new File([convertedBlob as Blob], newFileName, {
+            type: 'image/jpeg',
+            lastModified: file.lastModified,
+          });
+        } catch (e) {
+          error = 'HEIC/HEIF 文件转换失败';
+          status = 'error';
+        }
+      }
+    } else if (isMov) {
+      if (!ffmpegLoaded || !ffmpegRef.current || !fetchFileInstance) {
+        error = '视频转换工具未加载，请稍后再试或刷新页面。';
+        status = 'error';
+      } else {
+        isConverting = true;
+        status = 'converting';
+        try {
+          const inputFileName = 'input.mov';
+          const outputFileName = file.name.replace(/\.(mov)$/i, '.mp4');
+
+          await ffmpegRef.current.writeFile(inputFileName, await fetchFileInstance(file));
+          await ffmpegRef.current?.exec(
+            [
+              '-i',
+              inputFileName,
+              '-c:v',
+              'libx264',
+              '-preset',
+              'ultrafast',
+              '-crf',
+              '23',
+              outputFileName,
+            ],
+            undefined,
+            { signal }
+          );
+          const data = (await ffmpegRef.current?.readFile(outputFileName)) as Uint8Array;
+          processedFile = new File([data.buffer], outputFileName, {
+            type: 'video/mp4',
+            lastModified: file.lastModified,
+          });
+          isConverting = false;
+          status = 'pending';
+        } catch (e: any) {
+          if (e?.name === 'AbortError') {
+            error = '转换已取消';
+            status = 'error';
+          } else {
+            console.error('MOV 视频转换失败:', e);
+            error = 'MOV 视频转换失败';
+            status = 'error';
+          }
+          isConverting = false;
+        }
+      }
+    }
+
+    return {
+      id: `${file.name}-${file.size}-${file.lastModified}`,
+      file: processedFile,
+      progress: 0,
+      status,
+      error,
+      preview:
+        processedFile.type.startsWith('image/') || processedFile.type.startsWith('video/')
+          ? URL.createObjectURL(processedFile)
+          : undefined,
+      isConverting,
+    };
+  };
 
   const onDrop = useCallback(
-    async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
-      if (
-        fileRejections.some((rej) =>
-          rej.errors.some((err) => err.code === 'too-many-files')
-        )
-      ) {
+    (acceptedFiles: File[], fileRejections: FileRejection[]) => {
+      if (fileRejections.some((rej) => rej.errors.some((err) => err.code === 'too-many-files'))) {
         toast({
           title: '超出上传限制',
           description: `一次最多只能选择 ${MAX_FILES} 个文件。`,
@@ -60,64 +231,87 @@ export function UploadForm({
         return;
       }
 
-      const processFile = async (file: File): Promise<UploadableFile> => {
-        const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic');
+      const newUploads: UploadableFile[] = acceptedFiles.map((file) => {
+        const isHeic =
+          file.type === 'image/heic' ||
+          file.type === 'image/heif' ||
+          file.name.toLowerCase().endsWith('.heic');
         const isMov = file.type === 'video/quicktime' || file.name.toLowerCase().endsWith('.mov');
-
-        let processedFile = file;
-        let error;
-
-        if (isHeic) {
-          try {
-            const convertedBlob = await heic2any({
-              blob: file,
-              toType: 'image/jpeg',
-              quality: 0.8,
-            });
-            const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
-            processedFile = new File([convertedBlob as Blob], newFileName, {
-              type: 'image/jpeg',
-              lastModified: file.lastModified,
-            });
-          } catch (e) {
-            error = 'HEIC/HEIF 文件转换失败';
-          }
-        } else if (isMov) {
-          error = '暂不支持 MOV 格式, 请先手动转换';
-        }
+        const needsConversion = isHeic || isMov;
 
         return {
           id: `${file.name}-${file.size}-${file.lastModified}`,
-          file: processedFile,
+          file: file,
           progress: 0,
-          status: error ? 'error' : 'pending',
-          error,
-          preview: URL.createObjectURL(processedFile),
+          status: needsConversion ? 'converting' : 'pending',
+          preview: URL.createObjectURL(file),
+          isConverting: needsConversion,
         };
-      };
+      });
 
-      const newFilesPromises = acceptedFiles.map(processFile);
-      const newFiles = await Promise.all(newFilesPromises);
+      const rejectedFiles: UploadableFile[] = fileRejections.map(({ file, errors }) => ({
+        id: `${file.name}-${file.size}-${file.lastModified}`,
+        file,
+        progress: 0,
+        status: 'error',
+        error: errors[0].message,
+        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+      }));
 
-      const rejectedFiles: UploadableFile[] = fileRejections.map(
-        ({ file, errors }) => ({
-          id: `${file.name}-${file.size}-${file.lastModified}`,
-          file,
-          progress: 0,
-          status: 'error',
-          error: errors[0].message,
-          preview: file.type.startsWith('image/')
-            ? URL.createObjectURL(file)
-            : undefined,
-        })
-      );
+      const existingIds = new Set(files.map((f) => f.id));
+      const uniqueNewUploads = newUploads.filter((f) => !existingIds.has(f.id));
+
+      if (uniqueNewUploads.length < newUploads.length) {
+        toast({
+          title: '忽略了重复文件',
+          description: '部分选中的文件已存在于上传列表中。',
+        });
+      }
 
       setFiles((prevFiles) => {
-        const combined = [...prevFiles, ...newFiles, ...rejectedFiles];
+        const currentExistingIds = new Set(prevFiles.map((f) => f.id));
+        const trulyUniqueUploads = newUploads.filter((f) => !currentExistingIds.has(f.id));
+        const combined = [...prevFiles, ...trulyUniqueUploads, ...rejectedFiles];
         return combined.slice(0, MAX_FILES);
       });
+
+      uniqueNewUploads.forEach(async (uploadableFile) => {
+        if (!uploadableFile.isConverting) return;
+
+        const controller = new AbortController();
+        if (uploadableFile.file.type === 'video/quicktime') {
+          conversionControllersRef.current.set(uploadableFile.id, controller);
+          convertingFileIdRef.current = uploadableFile.id;
+        }
+
+        const processedResult = await processFile(uploadableFile.file, controller.signal);
+
+        if (uploadableFile.file.type === 'video/quicktime') {
+          convertingFileIdRef.current = null;
+          conversionControllersRef.current.delete(uploadableFile.id);
+        }
+
+        setFiles((prevFiles) =>
+          prevFiles.map((f) => {
+            if (f.id === uploadableFile.id) {
+              URL.revokeObjectURL(f.preview as string); // Revoke the old preview URL
+              return processedResult; // Use the new result with the correct preview
+            }
+            return f;
+          })
+        );
+      });
     },
-    [toast]
+    [
+      toast,
+      files,
+      modulesLoaded,
+      ffmpegLoaded,
+      ffmpegRef.current,
+      heic2anyInstance,
+      FFmpegInstance,
+      fetchFileInstance,
+    ]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -140,6 +334,12 @@ export function UploadForm({
   });
 
   const removeFile = (id: string) => {
+    const controller = conversionControllersRef.current.get(id);
+    if (controller) {
+      controller.abort();
+      conversionControllersRef.current.delete(id);
+    }
+
     setFiles((prevFiles) => {
       const fileToRemove = prevFiles.find((f) => f.id === id);
       if (fileToRemove?.preview) {
@@ -224,22 +424,25 @@ export function UploadForm({
 
   const handleUploadAll = async () => {
     const filesToUpload = files.filter((f) => f.status === 'pending');
-    if (filesToUpload.length === 0) return;
+    if (filesToUpload.length === 0) {
+      toast({
+        title: '没有准备就绪的文件',
+        description: '部分文件可能仍在转换中，请稍后再试。',
+      });
+      return;
+    }
 
     setIsUploading(true);
-
     setFiles((prevFiles) =>
-      prevFiles.map((f) => (f.status === 'pending' ? { ...f, status: 'uploading' } : f))
+      prevFiles.map((f) =>
+        filesToUpload.some((fu) => fu.id === f.id) ? { ...f, status: 'uploading' } : f
+      )
     );
 
-    const uploadPromises = filesToUpload.map((file) => uploadFile(file));
-    const results = await Promise.allSettled(uploadPromises);
-
-    setIsUploading(false);
+    const results = await Promise.allSettled(filesToUpload.map(uploadFile));
 
     const successfulUploads: R2File[] = [];
     const successfulUploadIds = new Set<string>();
-    const failedUploadIds = new Set<string>();
 
     results.forEach((result, index) => {
       const originalFile = filesToUpload[index];
@@ -247,9 +450,12 @@ export function UploadForm({
         successfulUploads.push(result.value);
         successfulUploadIds.add(originalFile.id);
       } else {
-        failedUploadIds.add(originalFile.id);
+        // Error state is set within uploadFile, so we just need to know the ID
+        // to prevent it from being removed from the list.
       }
     });
+
+    setIsUploading(false);
 
     if (successfulUploads.length > 0) {
       onUploadSuccess(successfulUploads);
@@ -266,15 +472,14 @@ export function UploadForm({
     );
 
     const successfulCount = successfulUploads.length;
-    const failedCount = failedUploadIds.size;
+    const failedCount = filesToUpload.length - successfulCount;
 
     if (successfulCount > 0 && failedCount === 0) {
-      toast({ title: '上传成功', description: '所有文件都已上传。' });
+      toast({ title: '上传成功', description: '所有就绪文件都已上传。' });
     } else if (successfulCount > 0 && failedCount > 0) {
       toast({
         title: '部分上传成功',
         description: `成功上传 ${successfulCount} 个文件，${failedCount} 个文件失败。`,
-        variant: 'default',
       });
     } else if (successfulCount === 0 && failedCount > 0) {
       toast({
@@ -289,6 +494,16 @@ export function UploadForm({
 
   return (
     <div className="w-full mx-auto mb-4">
+      {!modulesLoaded && (
+        <div className="mb-4 p-4 bg-blue-100 text-blue-800 rounded-lg">
+          正在加载必要模块，请稍候...
+        </div>
+      )}
+      {!ffmpegLoaded && modulesLoaded && (
+        <div className="mb-4 p-4 bg-blue-100 text-blue-800 rounded-lg">
+          正在加载视频转换工具，首次加载可能需要一些时间...
+        </div>
+      )}
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
@@ -313,17 +528,26 @@ export function UploadForm({
           {files.map((uploadableFile) => (
             <div
               key={uploadableFile.id}
-              className="p-4 border rounded-lg flex items-center justify-between gap-4 bg-muted/50"
+              className="p-4 border rounded-lg flex items-stretch justify-between gap-4 bg-muted/50"
             >
               {uploadableFile.preview ? (
                 <div className="w-10 h-10 rounded-md overflow-hidden flex-shrink-0 relative">
-                  <Image
-                    src={uploadableFile.preview}
-                    alt={uploadableFile.file.name}
-                    fill
-                    className="object-cover"
-                    sizes="40px"
-                  />
+                  {uploadableFile.file.type.startsWith('image/') ? (
+                    <Image
+                      src={uploadableFile.preview}
+                      alt={uploadableFile.file.name}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
+                  ) : (
+                    <video
+                      src={uploadableFile.preview}
+                      className="object-cover w-full h-full"
+                      muted
+                      preload="metadata"
+                    />
+                  )}
                 </div>
               ) : (
                 <FileIcon className="w-8 h-8 text-muted-foreground flex-shrink-0" />
@@ -331,7 +555,7 @@ export function UploadForm({
               <div className="flex-grow overflow-hidden">
                 <p className="font-medium truncate">{uploadableFile.file.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {(uploadableFile.file.size / 1024).toFixed(2)} KB
+                  {formatBytes(uploadableFile.file.size)}
                 </p>
                 {uploadableFile.status === 'uploading' && (
                   <div className="flex items-center gap-2 mt-1">
@@ -339,12 +563,29 @@ export function UploadForm({
                     <span className="text-xs font-mono">{uploadableFile.progress}%</span>
                   </div>
                 )}
+                {uploadableFile.status === 'converting' && (
+                  <div className="flex items-center gap-2 mt-1 text-blue-600">
+                    {uploadableFile.file.type.startsWith('video/') ? (
+                      <>
+                        <Progress value={uploadableFile.progress} className="w-full h-2" />
+                        <span className="text-xs font-mono">{uploadableFile.progress}%</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-4 h-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                        <span className="text-xs">正在转换...</span>
+                      </>
+                    )}
+                  </div>
+                )}
                 {uploadableFile.status === 'error' && (
                   <p className="text-xs text-destructive mt-1">{uploadableFile.error}</p>
                 )}
               </div>
-              <div className="flex-shrink-0">
-                {(uploadableFile.status === 'pending' || uploadableFile.status === 'error') && (
+              <div className="flex-shrink-0 flex flex-col items-center justify-between">
+                {(uploadableFile.status === 'pending' ||
+                  uploadableFile.status === 'error' ||
+                  uploadableFile.status === 'converting') && (
                   <button
                     onClick={() => removeFile(uploadableFile.id)}
                     className="p-1 text-muted-foreground hover:text-destructive"
@@ -354,6 +595,9 @@ export function UploadForm({
                 )}
                 {uploadableFile.status === 'uploading' && (
                   <div className="w-5 h-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                )}
+                {uploadableFile.status === 'converting' && (
+                  <div className="w-5 h-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
                 )}
                 {uploadableFile.status === 'success' && (
                   <CheckCircle className="w-5 h-5 text-green-500" />
@@ -367,7 +611,7 @@ export function UploadForm({
       <div className="pb-4 border-b">
         <button
           onClick={handleUploadAll}
-          disabled={pendingFilesCount === 0 || isUploading}
+          disabled={pendingFilesCount === 0 || isUploading || !ffmpegLoaded || !modulesLoaded}
           className="mt-6 w-full bg-primary text-primary-foreground font-semibold py-2 px-4 rounded-lg transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90"
         >
           {isUploading ? '上传中...' : `上传 ${pendingFilesCount} 个文件`}

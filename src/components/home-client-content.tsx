@@ -6,8 +6,17 @@ import { createClient } from '@/lib/supabase/client';
 import type { R2File } from '@/lib/types';
 
 import { FileList, FileListSkeleton } from '@/components/r2/file-list';
-import { UploadForm, UploadFormSkeleton } from '@/components/r2/upload-form';
+import { UploadFormSkeleton } from '@/components/r2/upload-form';
 import { R2Metrics } from '@/components/r2/r2-metrics';
+import dynamic from 'next/dynamic';
+
+const DynamicUploadForm = dynamic(
+  () => import('@/components/r2/upload-form').then((mod) => mod.UploadForm),
+  {
+    ssr: false,
+    loading: () => <UploadFormSkeleton />,
+  }
+);
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Accordion,
@@ -115,7 +124,7 @@ export function HomeClientContent() {
   return (
     <div className="w-full max-w-5xl mx-auto p-4">
       <R2Metrics />
-      <UploadForm
+      <DynamicUploadForm
         currentPrefix={currentPrefix}
         onUploadSuccess={(newFiles) => {
           setNewlyUploadedFiles((prev) => [...prev, ...newFiles]);
