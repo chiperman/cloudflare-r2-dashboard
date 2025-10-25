@@ -18,7 +18,7 @@ type ToasterToast = ToastProps & {
 };
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 500;
+const TOAST_REMOVE_DELAY = 1000;
 
 type State = {
   toasts: ToasterToast[];
@@ -124,6 +124,7 @@ function toast(props: Toast) {
       ...props,
       id,
       open: true,
+      duration: 5000,
       onOpenChange: (open: boolean) => {
         if (!open) dismiss();
       },
