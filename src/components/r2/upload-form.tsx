@@ -181,7 +181,7 @@ export function UploadForm({
             outputFileName,
           ]);
           const data = (await ffmpegRef.current?.readFile(outputFileName)) as Uint8Array;
-          processedFile = new File([data.buffer], outputFileName, {
+          processedFile = new File([data as BlobPart], outputFileName, {
             type: 'video/mp4',
             lastModified: file.lastModified,
           });
