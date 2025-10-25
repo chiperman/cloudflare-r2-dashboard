@@ -1018,13 +1018,13 @@ export function FileList({
         <div className="fixed bottom-10 right-10 z-50 flex flex-col gap-2">
           <Button size="lg" onClick={handleBulkDownload} disabled={isDownloading || isDeleting}>
             <Download className="h-5 w-5 mr-2" />
-            {isDownloading ? "下载中..." : `下载选中 (${selectedKeys.size})`}
+            {isDownloading ? '下载中...' : `下载选中 (${selectedKeys.size})`}
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="lg" disabled={isDeleting || isDownloading}>
                 <Trash2 className="h-5 w-5 mr-2" />
-                {isDeleting ? "删除中..." : `删除选中 (${selectedKeys.size})`}
+                {isDeleting ? '删除中...' : `删除选中 (${selectedKeys.size})`}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -1041,7 +1041,7 @@ export function FileList({
                   className="bg-red-500 text-white hover:bg-red-600"
                   disabled={isDeleting}
                 >
-                  {isDeleting ? "Deleting..." : "Delete"}
+                  {isDeleting ? 'Deleting...' : 'Delete'}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -1101,8 +1101,8 @@ export function FileList({
                   <ChevronRight className="h-6 w-6" />
                 </Button>
               </div>
-              <DialogFooter className="mt-4 w-full">
-                <div className="flex justify-center space-x-2">
+              <DialogFooter className="mt-4 sm:justify-center">
+                <div className="flex flex-wrap justify-end items-center gap-2">
                   <a href={previewFile.url} download={previewFile.key}>
                     <Button variant="outline">
                       <Download className="mr-2 h-4 w-4" />
@@ -1121,8 +1121,7 @@ export function FileList({
                           Boolean(
                             !profile?.role ||
                               (profile.role !== 'admin' &&
-                                (!previewFile.user_id ||
-                                  (user && user.id !== previewFile.user_id)))
+                                (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
                           ) || isDeleting
                         }
                         title={
@@ -1161,6 +1160,14 @@ export function FileList({
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setPreviewFile(null)}
+                    className="sm:hidden"
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    关闭
+                  </Button>
                 </div>
               </DialogFooter>
             </>
