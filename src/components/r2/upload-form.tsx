@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
 import { R2File } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import heic2any from 'heic2any';
 
 const MAX_SIZE_MB = 30;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -45,8 +46,12 @@ export function UploadForm({
   }, [files]);
 
   const onDrop = useCallback(
-    (acceptedFiles: File[], fileRejections: FileRejection[]) => {
-      if (fileRejections.some((rej) => rej.errors.some((err) => err.code === 'too-many-files'))) {
+    async (acceptedFiles: File[], fileRejections: FileRejection[]) => {
+      if (
+        fileRejections.some((rej) =>
+          rej.errors.some((err) => err.code === 'too-many-files')
+        )
+      ) {
         toast({
           title: '超出上传限制',
           description: `一次最多只能选择 ${MAX_FILES} 个文件。`,
@@ -55,22 +60,57 @@ export function UploadForm({
         return;
       }
 
-      const newFiles: UploadableFile[] = acceptedFiles.map((file) => ({
-        id: `${file.name}-${file.size}-${file.lastModified}`,
-        file,
-        progress: 0,
-        status: 'pending',
-        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
-      }));
+      const processFile = async (file: File): Promise<UploadableFile> => {
+        const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic');
+        const isMov = file.type === 'video/quicktime' || file.name.toLowerCase().endsWith('.mov');
 
-      const rejectedFiles: UploadableFile[] = fileRejections.map(({ file, errors }) => ({
-        id: `${file.name}-${file.size}-${file.lastModified}`,
-        file,
-        progress: 0,
-        status: 'error',
-        error: errors[0].message,
-        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
-      }));
+        let processedFile = file;
+        let error;
+
+        if (isHeic) {
+          try {
+            const convertedBlob = await heic2any({
+              blob: file,
+              toType: 'image/jpeg',
+              quality: 0.8,
+            });
+            const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+            processedFile = new File([convertedBlob as Blob], newFileName, {
+              type: 'image/jpeg',
+              lastModified: file.lastModified,
+            });
+          } catch (e) {
+            error = 'HEIC/HEIF 文件转换失败';
+          }
+        } else if (isMov) {
+          error = '暂不支持 MOV 格式, 请先手动转换';
+        }
+
+        return {
+          id: `${file.name}-${file.size}-${file.lastModified}`,
+          file: processedFile,
+          progress: 0,
+          status: error ? 'error' : 'pending',
+          error,
+          preview: URL.createObjectURL(processedFile),
+        };
+      };
+
+      const newFilesPromises = acceptedFiles.map(processFile);
+      const newFiles = await Promise.all(newFilesPromises);
+
+      const rejectedFiles: UploadableFile[] = fileRejections.map(
+        ({ file, errors }) => ({
+          id: `${file.name}-${file.size}-${file.lastModified}`,
+          file,
+          progress: 0,
+          status: 'error',
+          error: errors[0].message,
+          preview: file.type.startsWith('image/')
+            ? URL.createObjectURL(file)
+            : undefined,
+        })
+      );
 
       setFiles((prevFiles) => {
         const combined = [...prevFiles, ...newFiles, ...rejectedFiles];
@@ -85,14 +125,17 @@ export function UploadForm({
     maxFiles: MAX_FILES,
     maxSize: MAX_SIZE_BYTES,
     accept: {
-      'image/jpeg': [],
-      'image/png': [],
-      'image/gif': [],
-      'image/webp': [],
-      'image/svg+xml': [],
-      'video/mp4': [],
-      'video/webm': [],
-      'video/ogg': [],
+      'image/jpeg': ['.jpeg', '.jpg'],
+      'image/png': ['.png'],
+      'image/gif': ['.gif'],
+      'image/webp': ['.webp'],
+      'image/svg+xml': ['.svg'],
+      'image/heic': ['.heic'],
+      'image/heif': ['.heif'],
+      'video/mp4': ['.mp4'],
+      'video/webm': ['.webm'],
+      'video/ogg': ['.ogg'],
+      'video/quicktime': ['.mov'],
     },
   });
 
