@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import Image from 'next/image';
 import { useDropzone, FileRejection } from 'react-dropzone';
 import { Upload, File as FileIcon, X, CheckCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
@@ -18,6 +19,7 @@ interface UploadableFile {
   progress: number;
   status: 'pending' | 'uploading' | 'success' | 'error';
   error?: string;
+  preview?: string;
 }
 
 export function UploadForm({
@@ -31,9 +33,19 @@ export function UploadForm({
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Cleanup object URLs on unmount
+    return () => {
+      files.forEach((uploadableFile) => {
+        if (uploadableFile.preview) {
+          URL.revokeObjectURL(uploadableFile.preview);
+        }
+      });
+    };
+  }, [files]);
+
   const onDrop = useCallback(
     (acceptedFiles: File[], fileRejections: FileRejection[]) => {
-      // Check if rejection is due to too many files
       if (fileRejections.some((rej) => rej.errors.some((err) => err.code === 'too-many-files'))) {
         toast({
           title: '超出上传限制',
@@ -48,6 +60,7 @@ export function UploadForm({
         file,
         progress: 0,
         status: 'pending',
+        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
       }));
 
       const rejectedFiles: UploadableFile[] = fileRejections.map(({ file, errors }) => ({
@@ -56,11 +69,11 @@ export function UploadForm({
         progress: 0,
         status: 'error',
         error: errors[0].message,
+        preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
       }));
 
       setFiles((prevFiles) => {
         const combined = [...prevFiles, ...newFiles, ...rejectedFiles];
-        // Enforce the MAX_FILES limit on the total number of files
         return combined.slice(0, MAX_FILES);
       });
     },
@@ -84,7 +97,13 @@ export function UploadForm({
   });
 
   const removeFile = (id: string) => {
-    setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
+    setFiles((prevFiles) => {
+      const fileToRemove = prevFiles.find((f) => f.id === id);
+      if (fileToRemove?.preview) {
+        URL.revokeObjectURL(fileToRemove.preview);
+      }
+      return prevFiles.filter((file) => file.id !== id);
+    });
   };
 
   const uploadFile = (fileToUpload: UploadableFile): Promise<R2File> => {
@@ -193,8 +212,15 @@ export function UploadForm({
       onUploadSuccess(successfulUploads);
     }
 
-    // Filter out successfully uploaded files from the state
-    setFiles((prevFiles) => prevFiles.filter((f) => !successfulUploadIds.has(f.id)));
+    setFiles((prevFiles) =>
+      prevFiles.filter((f) => {
+        const shouldKeep = !successfulUploadIds.has(f.id);
+        if (!shouldKeep && f.preview) {
+          URL.revokeObjectURL(f.preview);
+        }
+        return shouldKeep;
+      })
+    );
 
     const successfulCount = successfulUploads.length;
     const failedCount = failedUploadIds.size;
@@ -246,7 +272,19 @@ export function UploadForm({
               key={uploadableFile.id}
               className="p-4 border rounded-lg flex items-center justify-between gap-4 bg-muted/50"
             >
-              <FileIcon className="w-8 h-8 text-muted-foreground flex-shrink-0" />
+              {uploadableFile.preview ? (
+                <div className="w-10 h-10 rounded-md overflow-hidden flex-shrink-0 relative">
+                  <Image
+                    src={uploadableFile.preview}
+                    alt={uploadableFile.file.name}
+                    fill
+                    className="object-cover"
+                    sizes="40px"
+                  />
+                </div>
+              ) : (
+                <FileIcon className="w-8 h-8 text-muted-foreground flex-shrink-0" />
+              )}
               <div className="flex-grow overflow-hidden">
                 <p className="font-medium truncate">{uploadableFile.file.name}</p>
                 <p className="text-sm text-muted-foreground">
