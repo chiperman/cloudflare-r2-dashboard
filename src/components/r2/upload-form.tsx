@@ -37,7 +37,6 @@ export function UploadForm({
   const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
   const [modulesLoaded, setModulesLoaded] = useState(false);
   const ffmpegRef = useRef<any | null>(null);
-  const conversionControllersRef = useRef(new Map<string, AbortController>());
   const { toast } = useToast();
 
   const [heic2anyInstance, setHeic2anyInstance] = useState<any>(null);
@@ -125,7 +124,7 @@ export function UploadForm({
     }
   }, [modulesLoaded, ffmpegLoaded, FFmpegInstance]);
 
-  const processFile = async (file: File, signal?: AbortSignal): Promise<UploadableFile> => {
+  const processFile = async (file: File): Promise<UploadableFile> => {
     const isHeic =
       file.type === 'image/heic' ||
       file.type === 'image/heif' ||
@@ -170,21 +169,17 @@ export function UploadForm({
           const outputFileName = file.name.replace(/\.(mov)$/i, '.mp4');
 
           await ffmpegRef.current.writeFile(inputFileName, await fetchFileInstance(file));
-          await ffmpegRef.current?.exec(
-            [
-              '-i',
-              inputFileName,
-              '-c:v',
-              'libx264',
-              '-preset',
-              'ultrafast',
-              '-crf',
-              '23',
-              outputFileName,
-            ],
-            undefined,
-            { signal }
-          );
+          await ffmpegRef.current?.exec([
+            '-i',
+            inputFileName,
+            '-c:v',
+            'libx264',
+            '-preset',
+            'ultrafast',
+            '-crf',
+            '23',
+            outputFileName,
+          ]);
           const data = (await ffmpegRef.current?.readFile(outputFileName)) as Uint8Array;
           processedFile = new File([data.buffer], outputFileName, {
             type: 'video/mp4',
@@ -193,14 +188,9 @@ export function UploadForm({
           isConverting = false;
           status = 'pending';
         } catch (e: any) {
-          if (e?.name === 'AbortError') {
-            error = '转换已取消';
-            status = 'error';
-          } else {
-            console.error('MOV 视频转换失败:', e);
-            error = 'MOV 视频转换失败';
-            status = 'error';
-          }
+          console.error('MOV 视频转换失败:', e);
+          error = 'MOV 视频转换失败';
+          status = 'error';
           isConverting = false;
         }
       }
@@ -275,33 +265,29 @@ export function UploadForm({
         return combined.slice(0, MAX_FILES);
       });
 
-      uniqueNewUploads.forEach(async (uploadableFile) => {
-        if (!uploadableFile.isConverting) return;
-
-        const controller = new AbortController();
-        if (uploadableFile.file.type === 'video/quicktime') {
-          conversionControllersRef.current.set(uploadableFile.id, controller);
-          convertingFileIdRef.current = uploadableFile.id;
-        }
-
-        const processedResult = await processFile(uploadableFile.file, controller.signal);
-
-        if (uploadableFile.file.type === 'video/quicktime') {
-          convertingFileIdRef.current = null;
-          conversionControllersRef.current.delete(uploadableFile.id);
-        }
-
-        setFiles((prevFiles) =>
-          prevFiles.map((f) => {
-            if (f.id === uploadableFile.id) {
-              URL.revokeObjectURL(f.preview as string); // Revoke the old preview URL
-              return processedResult; // Use the new result with the correct preview
-            }
-            return f;
-          })
-        );
-      });
-    },
+            uniqueNewUploads.forEach(async (uploadableFile) => {
+              if (!uploadableFile.isConverting) return;
+      
+              if (uploadableFile.file.type === 'video/quicktime') {
+                convertingFileIdRef.current = uploadableFile.id;
+              }
+      
+              const processedResult = await processFile(uploadableFile.file);
+              
+              if (uploadableFile.file.type === 'video/quicktime') {
+                convertingFileIdRef.current = null;
+              }
+      
+              setFiles((prevFiles) =>
+                prevFiles.map((f) => {
+                  if (f.id === uploadableFile.id) {
+                    URL.revokeObjectURL(f.preview as string); // Revoke the old preview URL
+                    return processedResult; // Use the new result with the correct preview
+                  }
+                  return f;
+                })
+              );
+            });    },
     [
       toast,
       files,
@@ -333,21 +319,30 @@ export function UploadForm({
     },
   });
 
-  const removeFile = (id: string) => {
-    const controller = conversionControllersRef.current.get(id);
-    if (controller) {
-      controller.abort();
-      conversionControllersRef.current.delete(id);
-    }
+  const removeFile = useCallback(
+    (id: string) => {
+      const fileToRemove = files.find((f) => f.id === id);
 
-    setFiles((prevFiles) => {
-      const fileToRemove = prevFiles.find((f) => f.id === id);
-      if (fileToRemove?.preview) {
-        URL.revokeObjectURL(fileToRemove.preview);
+      if (fileToRemove?.status === 'converting' && fileToRemove.file.type.startsWith('video/')) {
+        ffmpegRef.current?.terminate();
+        ffmpegRef.current = null;
+        setFfmpegLoaded(false);
+        toast({
+          title: '视频转换已取消',
+          description: 'FFmpeg 引擎正在重新加载，请稍候。',
+        });
       }
-      return prevFiles.filter((file) => file.id !== id);
-    });
-  };
+
+      setFiles((prevFiles) => {
+        const fileToRevoke = prevFiles.find((f) => f.id === id);
+        if (fileToRevoke?.preview) {
+          URL.revokeObjectURL(fileToRevoke.preview);
+        }
+        return prevFiles.filter((file) => file.id !== id);
+      });
+    },
+    [files, ffmRef, setFfmpegLoaded, toast]
+  );
 
   const uploadFile = (fileToUpload: UploadableFile): Promise<R2File> => {
     return new Promise<R2File>((resolve, reject) => {
