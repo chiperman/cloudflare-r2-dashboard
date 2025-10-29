@@ -618,7 +618,7 @@ export function FileList({
                 </DrawerTrigger>
                 <DrawerContent>
                   <DrawerHeader>
-                    <DrawerTitle>选择搜索范围</DrawerTitle>
+                    <DrawerTitle>搜索范围</DrawerTitle>
                     <DrawerDescription>选择一个范围进行搜索</DrawerDescription>
                   </DrawerHeader>
                   <div className="p-4">
@@ -771,53 +771,122 @@ export function FileList({
                 </TableCell>
                 <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
                   <AlertDialog>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>操作</DropdownMenuLabel>
-                        <DropdownMenuItem asChild className="cursor-pointer">
-                          <a href={file.url} download={file.key}>
-                            <Download className="mr-2 h-4 w-4" />
-                            <span>下载</span>
-                          </a>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={() => handleCopy(file.url)}
-                          className="cursor-pointer"
-                        >
-                          <Copy className="mr-2 h-4 w-4" />
-                          <span>复制链接</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive cursor-pointer"
-                            disabled={
-                              Boolean(
-                                !profile?.role ||
-                                  (profile.role !== 'admin' &&
-                                    (!file.user_id || (user && user.id !== file.user_id)))
-                              ) || isDeleting
-                            }
-                            title={
-                              !profile?.role ||
-                              (profile.role !== 'admin' &&
-                                (!file.user_id || (user && user.id !== file.user_id)))
-                                ? '你没有删除此文件的权限'
-                                : '删除文件'
-                            }
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>{isDeleting ? '删除中...' : '删除'}</span>
+                    {/* Desktop Dropdown Menu */}
+                    <div className="hidden md:block">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>操作</DropdownMenuLabel>
+                          <DropdownMenuItem asChild className="cursor-pointer">
+                            <a href={file.url} download={file.key}>
+                              <Download className="mr-2 h-4 w-4" />
+                              <span>下载</span>
+                            </a>
                           </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          <DropdownMenuItem
+                            onSelect={() => handleCopy(file.url)}
+                            className="cursor-pointer"
+                          >
+                            <Copy className="mr-2 h-4 w-4" />
+                            <span>复制链接</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive cursor-pointer"
+                              disabled={
+                                Boolean(
+                                  !profile?.role ||
+                                    (profile.role !== 'admin' &&
+                                      (!file.user_id ||
+                                        (user && user.id !== file.user_id)))
+                                ) || isDeleting
+                              }
+                              title={
+                                !profile?.role ||
+                                (profile.role !== 'admin' &&
+                                  (!file.user_id ||
+                                    (user && user.id !== file.user_id)))
+                                  ? '你没有删除此文件的权限'
+                                  : '删除文件'
+                              }
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>{isDeleting ? '删除中...' : '删除'}</span>
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Mobile Drawer */}
+                    <div className="md:hidden">
+                      <Drawer>
+                        <DrawerTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DrawerTrigger>
+                        <DrawerContent>
+                          <DrawerHeader>
+                            <DrawerTitle>{file.key}</DrawerTitle>
+                            <DrawerDescription>选择一个操作</DrawerDescription>
+                          </DrawerHeader>
+                          <div className="p-4 grid gap-2">
+                            <Button variant="outline" asChild>
+                              <a href={file.url} download={file.key}>
+                                <Download className="mr-2 h-4 w-4" />
+                                <span>下载</span>
+                              </a>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => handleCopy(file.url)}
+                            >
+                              <Copy className="mr-2 h-4 w-4" />
+                              <span>复制链接</span>
+                            </Button>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                disabled={
+                                  Boolean(
+                                    !profile?.role ||
+                                      (profile.role !== 'admin' &&
+                                        (!file.user_id ||
+                                          (user && user.id !== file.user_id)))
+                                  ) || isDeleting
+                                }
+                                title={
+                                  !profile?.role ||
+                                  (profile.role !== 'admin' &&
+                                    (!file.user_id ||
+                                      (user && user.id !== file.user_id)))
+                                    ? '你没有删除此文件的权限'
+                                    : '删除文件'
+                                }
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>{isDeleting ? '删除中...' : '删除'}</span>
+                              </Button>
+                            </AlertDialogTrigger>
+                          </div>
+                          <DrawerFooter>
+                            <DrawerClose asChild>
+                              <Button variant="outline">取消</Button>
+                            </DrawerClose>
+                          </DrawerFooter>
+                        </DrawerContent>
+                      </Drawer>
+                    </div>
+
+                    {/* Shared Alert Dialog Content */}
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>确认删除？</AlertDialogTitle>
