@@ -77,6 +77,8 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ClickableTooltip } from '@/components/ui/clickable-tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
@@ -98,7 +100,6 @@ import { formatBytes } from '@/lib/utils';
 
 import type { User } from '@supabase/supabase-js';
 import { R2File } from '@/lib/types';
-
 
 // SWR fetcher
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -303,6 +304,12 @@ export function FileList({
     });
   };
 
+  const handleCopyFilename = (filename: string) => {
+    navigator.clipboard.writeText(filename).then(() => {
+      toast({ title: '已复制!', description: `文件名已复制到剪贴板。` });
+    });
+  };
+
   const handleDelete = async (fileKey: string) => {
     const fileToDelete = files.find((f) => f.key === fileKey);
     if (!fileToDelete) return;
@@ -441,7 +448,7 @@ export function FileList({
   if (error) return <div className="text-center p-8 text-destructive">加载失败</div>;
 
   return (
-    <>
+    <TooltipProvider>
       <div className="mb-4">
         <Breadcrumb>
           <BreadcrumbList>
@@ -689,7 +696,7 @@ export function FileList({
                     <FolderIcon className="w-6 h-6 text-muted-foreground" />
                   </div>
                 </TableCell>
-                <TableCell className="text-center truncate max-w-[150px] md:max-w-full">
+                <TableCell className="text-center truncate max-w-[150px] md:max-w-sm">
                   {dir}
                 </TableCell>
                 <TableCell></TableCell> {/* Placeholder for Uploader */}
@@ -752,11 +759,20 @@ export function FileList({
                     </div>
                   </button>
                 </TableCell>
-                <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
-                  {file.key}
+                <TableCell className="text-center max-w-[120px] md:max-w-sm">
+                  <ClickableTooltip content={file.key}>
+                    <span
+                      className="block truncate cursor-pointer"
+                      onClick={() => handleCopyFilename(file.key)}
+                    >
+                      {file.key}
+                    </span>
+                  </ClickableTooltip>
                 </TableCell>
-                <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
-                  {file.uploader}
+                <TableCell className="text-center max-w-[120px] md:max-w-sm">
+                  <ClickableTooltip content={file.uploader}>
+                    <span className="block truncate">{file.uploader}</span>
+                  </ClickableTooltip>
                 </TableCell>
                 <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
                   <span className="md:hidden">
@@ -803,15 +819,13 @@ export function FileList({
                                 Boolean(
                                   !profile?.role ||
                                     (profile.role !== 'admin' &&
-                                      (!file.user_id ||
-                                        (user && user.id !== file.user_id)))
+                                      (!file.user_id || (user && user.id !== file.user_id)))
                                 ) || isDeleting
                               }
                               title={
                                 !profile?.role ||
                                 (profile.role !== 'admin' &&
-                                  (!file.user_id ||
-                                    (user && user.id !== file.user_id)))
+                                  (!file.user_id || (user && user.id !== file.user_id)))
                                   ? '你没有删除此文件的权限'
                                   : '删除文件'
                               }
@@ -845,10 +859,7 @@ export function FileList({
                                 <span>下载</span>
                               </a>
                             </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => handleCopy(file.url)}
-                            >
+                            <Button variant="outline" onClick={() => handleCopy(file.url)}>
                               <Copy className="mr-2 h-4 w-4" />
                               <span>复制链接</span>
                             </Button>
@@ -859,15 +870,13 @@ export function FileList({
                                   Boolean(
                                     !profile?.role ||
                                       (profile.role !== 'admin' &&
-                                        (!file.user_id ||
-                                          (user && user.id !== file.user_id)))
+                                        (!file.user_id || (user && user.id !== file.user_id)))
                                   ) || isDeleting
                                 }
                                 title={
                                   !profile?.role ||
                                   (profile.role !== 'admin' &&
-                                    (!file.user_id ||
-                                      (user && user.id !== file.user_id)))
+                                    (!file.user_id || (user && user.id !== file.user_id)))
                                     ? '你没有删除此文件的权限'
                                     : '删除文件'
                                 }
@@ -1235,7 +1244,7 @@ export function FileList({
           )}
         </DialogContent>
       </Dialog>
-    </>
+    </TooltipProvider>
   );
 }
 
