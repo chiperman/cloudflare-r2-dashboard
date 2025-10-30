@@ -759,7 +759,7 @@ export function FileList({
                     </div>
                   </button>
                 </TableCell>
-                <TableCell className="text-center max-w-[120px] md:max-w-sm">
+                <TableCell className="text-center max-w-[120px]">
                   <ClickableTooltip content={file.key}>
                     <span
                       className="block truncate cursor-pointer"
@@ -769,12 +769,12 @@ export function FileList({
                     </span>
                   </ClickableTooltip>
                 </TableCell>
-                <TableCell className="text-center max-w-[120px] md:max-w-sm">
+                <TableCell className="text-center max-w-[120px]">
                   <ClickableTooltip content={file.uploader}>
                     <span className="block truncate">{file.uploader}</span>
                   </ClickableTooltip>
                 </TableCell>
-                <TableCell className="text-center truncate max-w-[120px] md:max-w-full">
+                <TableCell className="text-center truncate max-w-[120px]">
                   <span className="md:hidden">
                     {new Date(file.uploadedAt).toLocaleDateString()}
                   </span>
