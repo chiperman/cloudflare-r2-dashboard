@@ -32,7 +32,7 @@ export default function UpdateDisplayNameForm({
     if (error) {
       setMessage(`更新失败: ${error.message}`);
     } else {
-      setMessage('显示名称更新成功！');
+      setMessage('名称更新成功！');
     }
     setLoading(false);
   };
