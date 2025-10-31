@@ -33,7 +33,7 @@ export function SignUpForm({
     setError(null);
 
     if (password !== repeatPassword) {
-      setError('Passwords do not match');
+      setError('两次输入的密码不一致');
       setIsLoading(false);
       return;
     }
@@ -49,7 +49,7 @@ export function SignUpForm({
       if (error) throw error;
       onSignUpSuccess?.();
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred');
+      setError(error instanceof Error ? error.message : '发生了一个错误');
     } finally {
       setIsLoading(false);
     }
@@ -59,14 +59,14 @@ export function SignUpForm({
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+          <CardTitle className="text-2xl">注册</CardTitle>
+          <CardDescription>创建一个新账户</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">邮箱</Label>
                 <Input
                   id="email"
                   type="email"
@@ -78,12 +78,12 @@ export function SignUpForm({
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">密码</Label>
                 </div>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="password"
+                  placeholder="请输入密码"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -91,12 +91,12 @@ export function SignUpForm({
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
+                  <Label htmlFor="repeat-password">重复密码</Label>
                 </div>
                 <Input
                   id="repeat-password"
                   type="password"
-                  placeholder="repeat password"
+                  placeholder="请再次输入密码"
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
@@ -104,18 +104,16 @@ export function SignUpForm({
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Creating an account...' : 'Sign up'}
+                {isLoading ? '创建账户中...' : '注册'}
               </Button>
             </div>
             <div className="mt-4 text-center text-sm">
-              Already have an account?{' '}
+              已经有账户了？{' '}
               <button
                 type="button"
                 onClick={onSwitchToLogin}
                 className="underline underline-offset-4"
-              >
-                Login
-              </button>
+              >登录</button>
             </div>
           </form>
         </CardContent>
