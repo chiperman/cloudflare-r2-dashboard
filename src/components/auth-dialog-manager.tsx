@@ -22,7 +22,10 @@ export function AuthDialogManager() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        router.push('/auth/reset-password');
+      }
       setUser(session?.user ?? null);
       router.refresh();
     });

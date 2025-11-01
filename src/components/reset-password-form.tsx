@@ -48,24 +48,7 @@ export default function ResetPasswordForm({
     },
   });
 
-  useEffect(() => {
-    const supabase = createClient();
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        // Here you can handle the password recovery event
-        // For example, you might want to show a success message
-        // or redirect the user.
-        // For now, we'll just log it.
-        console.log('Password recovery event received');
-      }
-    });
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
