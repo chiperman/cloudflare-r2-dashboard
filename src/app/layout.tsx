@@ -26,6 +26,12 @@ export const metadata: Metadata = {
     ],
     apple: '/favico-256x256.png?v=1', // Using 256x256 as a high-res fallback for apple-touch-icon
   },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 const geistSans = Geist({
