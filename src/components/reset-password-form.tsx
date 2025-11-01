@@ -72,6 +72,7 @@ export default function ResetPasswordForm({
         title: '成功',
         description: '您的密码已成功重置，请使用新密码登录。',
       });
+      await supabase.auth.signOut();
       // Redirect to login after a short delay
       setTimeout(() => {
         router.push('/'); // Adjust this to your login page route if different
