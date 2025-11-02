@@ -39,18 +39,32 @@ export function MobilePreviewDrawer({
   user,
 }: MobilePreviewDrawerProps) {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState('100vh');
 
   useEffect(() => {
     setIsImageLoaded(false);
   }, [previewFile]);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      setViewportHeight(`${window.innerHeight}px`);
+    };
+
+    updateHeight(); // Set initial height
+    window.addEventListener('resize', updateHeight);
+
+    return () => {
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, []);
 
   if (!open || !previewFile) return null;
 
   return (
     <RemoveScroll>
       <div
-        className="fixed inset-0 z-50 bg-background flex flex-col h-screen"
-        style={{ touchAction: 'none' }}
+        className="fixed inset-0 z-50 bg-background flex flex-col"
+        style={{ height: viewportHeight, touchAction: 'none' }}
       >
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b flex-shrink-0">
