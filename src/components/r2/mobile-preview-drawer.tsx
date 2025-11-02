@@ -5,6 +5,7 @@ import { Download, Copy, ImageIcon, Trash2, ChevronLeft, ChevronRight, X } from 
 import { R2File } from '@/lib/types';
 
 import { useState, useEffect } from 'react';
+import { RemoveScroll } from 'react-remove-scroll';
 
 interface MobilePreviewDrawerProps {
   open: boolean;
@@ -43,22 +44,14 @@ export function MobilePreviewDrawer({
     setIsImageLoaded(false);
   }, [previewFile]);
 
-  useEffect(() => {
-    if (open) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [open]);
-
   if (!open || !previewFile) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col h-screen overscroll-contain">
+    <RemoveScroll>
+      <div
+        className="fixed inset-0 z-50 bg-background flex flex-col h-screen"
+        style={{ touchAction: 'none' }}
+      >
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b flex-shrink-0">
         <div className="flex items-center gap-4 min-w-0">
@@ -176,6 +169,6 @@ export function MobilePreviewDrawer({
           </AlertDialog>
         </div>
       </footer>
-    </div>
-  );
-}
+            </div>
+        </RemoveScroll>
+      );}
