@@ -102,8 +102,29 @@ import { formatBytes } from '@/lib/utils';
 import type { User } from '@supabase/supabase-js';
 import { R2File } from '@/lib/types';
 
+import { useSwipeable } from 'react-swipeable';
+
 // SWR fetcher
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+// Custom hook to check for media query
+const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+    const listener = () => {
+      setMatches(media.matches);
+    };
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, [matches, query]);
+
+  return matches;
+};
 
 interface FileListResponse {
   files: R2File[];
@@ -181,6 +202,14 @@ export function FileList({
   const [isCreateFolderDrawerOpen, setIsCreateFolderDrawerOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
+  const handlers = useSwipeable({
+    onSwipedLeft: () => handleNextPreview(),
+    onSwipedRight: () => handlePrevPreview(),
+    preventScrollOnSwipe: true,
+    trackMouse: true,
+  });
 
   const handleOpenPreview = (file: R2File) => {
     const index = files.findIndex((f) => f.key === file.key);
@@ -1210,137 +1239,252 @@ export function FileList({
         </div>
       )}
 
-      {/* Preview Dialog */}
-      <Dialog open={!!previewFile} onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}>
-        <DialogContent className="max-w-4xl h-auto">
-          {previewFile && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{previewFile.key}</DialogTitle>
-              </DialogHeader>
-              <div className="mt-4 relative w-full h-[70vh] flex items-center justify-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handlePrevPreview}
-                  disabled={previewIndex === 0}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </Button>
-                {previewFile.key.toLowerCase().endsWith('.mp4') ||
-                previewFile.key.toLowerCase().endsWith('.webm') ||
-                previewFile.key.toLowerCase().endsWith('.mov') ? (
-                  <video
-                    src={previewFile.url}
-                    controls
-                    autoPlay
-                    className="w-full h-full object-contain"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                ) : (
-                  <div className="relative w-full h-full max-w-[70vh] max-h-[70vh]">
-                    <Image
-                      key={previewFile.key}
-                      src={previewFile.url}
-                      alt={previewFile.key}
-                      fill
-                      className="object-contain"
-                      placeholder={previewFile.blurDataURL ? 'blur' : 'empty'}
-                      {...(previewFile.blurDataURL && { blurDataURL: previewFile.blurDataURL })}
-                    />
-                  </div>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleNextPreview}
-                  disabled={previewIndex === files.length - 1}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </Button>
-              </div>
-              <DialogFooter className="mt-4 sm:justify-center">
-                <div className="flex flex-wrap justify-end items-center gap-2">
-                  <a href={previewFile.url} download={previewFile.key}>
-                    <Button variant="outline">
-                      <Download className="mr-2 h-4 w-4" />
-                      下载
-                    </Button>
-                  </a>
-                  {/\.(jpe?g|png|gif|webp|bmp)$/i.test(previewFile.key) && (
-                    <Button variant="outline" onClick={() => handleCopyImage(previewFile)}>
-                      <ImageIcon className="mr-2 h-4 w-4" />
-                      复制图片
-                    </Button>
-                  )}
-                  <Button variant="outline" onClick={() => handleCopy(previewFile.url)}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    复制链接
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        disabled={
-                          Boolean(
-                            !profile?.role ||
-                              (profile.role !== 'admin' &&
-                                (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
-                          ) || isDeleting
-                        }
-                        title={
-                          !profile?.role ||
-                          (profile.role !== 'admin' &&
-                            (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
-                            ? '你没有删除此文件的权限'
-                            : '删除文件'
-                        }
-                      >
-                        {isDeleting ? (
-                          '删除中...'
-                        ) : (
-                          <>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            删除
-                          </>
-                        )}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>确认删除？</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          确认删除 {previewFile.key}？此操作不可恢复。
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>取消</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(previewFile.key)}
-                          disabled={isDeleting}
-                        >
-                          {isDeleting ? '删除中...' : '删除'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+      {/* Preview Components */}
+      {isMobile ? (
+        <Drawer open={!!previewFile} onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}>
+          <DrawerContent>
+            {previewFile && (
+              <>
+                <DrawerHeader>
+                  <DrawerTitle className="truncate">{previewFile.key}</DrawerTitle>
+                </DrawerHeader>
+                <div {...handlers} className="relative w-full h-[60vh] flex items-center justify-center touch-none">
                   <Button
-                    variant="secondary"
-                    onClick={() => setPreviewFile(null)}
-                    className="sm:hidden"
+                    variant="ghost"
+                    size="icon"
+                    onClick={handlePrevPreview}
+                    disabled={previewIndex === 0}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-10"
                   >
-                    <X className="mr-2 h-4 w-4" />
-                    关闭
+                    <ChevronLeft className="h-6 w-6" />
+                  </Button>
+                  {previewFile.key.toLowerCase().endsWith('.mp4') ||
+                  previewFile.key.toLowerCase().endsWith('.webm') ||
+                  previewFile.key.toLowerCase().endsWith('.mov') ? (
+                    <video src={previewFile.url} controls autoPlay className="w-full h-full object-contain">
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <div className="relative w-full h-full">
+                      <Image
+                        key={previewFile.key}
+                        src={previewFile.url}
+                        alt={previewFile.key}
+                        fill
+                        className="object-contain"
+                        placeholder={previewFile.blurDataURL ? 'blur' : 'empty'}
+                        {...(previewFile.blurDataURL && { blurDataURL: previewFile.blurDataURL })}
+                      />
+                    </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleNextPreview}
+                    disabled={previewIndex === files.length - 1}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
+                  >
+                    <ChevronRight className="h-6 w-6" />
                   </Button>
                 </div>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+                <DrawerFooter>
+                  <div className="grid grid-cols-2 gap-2">
+                    <a href={previewFile.url} download={previewFile.key} className="w-full">
+                      <Button variant="outline" className="w-full">
+                        <Download className="mr-2 h-4 w-4" />
+                        下载
+                      </Button>
+                    </a>
+                    <Button variant="outline" onClick={() => handleCopy(previewFile.url)} className="w-full">
+                      <Copy className="mr-2 h-4 w-4" />
+                      复制链接
+                    </Button>
+                    {/\.(jpe?g|png|gif|webp|bmp)$/i.test(previewFile.key) && (
+                      <Button variant="outline" onClick={() => handleCopyImage(previewFile)} className="w-full">
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        复制图片
+                      </Button>
+                    )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          disabled={
+                            Boolean(
+                              !profile?.role ||
+                                (profile.role !== 'admin' &&
+                                  (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
+                            ) || isDeleting
+                          }
+                          title={
+                            !profile?.role ||
+                            (profile.role !== 'admin' &&
+                              (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
+                              ? '你没有删除此文件的权限'
+                              : '删除文件'
+                          }
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {isDeleting ? '删除中...' : '删除'}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>确认删除？</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            确认删除 {previewFile.key}？此操作不可恢复。
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>取消</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(previewFile.key)} disabled={isDeleting}>
+                            {isDeleting ? '删除中...' : '删除'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                  <DrawerClose asChild className="mt-2">
+                    <Button variant="outline">关闭</Button>
+                  </DrawerClose>
+                </DrawerFooter>
+              </>
+            )}
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={!!previewFile} onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}>
+          <DialogContent className="max-w-4xl h-auto">
+            {previewFile && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{previewFile.key}</DialogTitle>
+                </DialogHeader>
+                <div {...handlers} className="mt-4 relative w-full h-[70vh] flex items-center justify-center touch-none">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handlePrevPreview}
+                    disabled={previewIndex === 0}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-10"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </Button>
+                  {previewFile.key.toLowerCase().endsWith('.mp4') ||
+                  previewFile.key.toLowerCase().endsWith('.webm') ||
+                  previewFile.key.toLowerCase().endsWith('.mov') ? (
+                    <video
+                      src={previewFile.url}
+                      controls
+                      autoPlay
+                      className="w-full h-full object-contain"
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  ) : (
+                    <div className="relative w-full h-full max-w-[70vh] max-h-[70vh]">
+                      <Image
+                        key={previewFile.key}
+                        src={previewFile.url}
+                        alt={previewFile.key}
+                        fill
+                        className="object-contain"
+                        placeholder={previewFile.blurDataURL ? 'blur' : 'empty'}
+                        {...(previewFile.blurDataURL && { blurDataURL: previewFile.blurDataURL })}
+                      />
+                    </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleNextPreview}
+                    disabled={previewIndex === files.length - 1}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </Button>
+                </div>
+                <DialogFooter className="mt-4 sm:justify-center">
+                  <div className="flex flex-wrap justify-end items-center gap-2">
+                    <a href={previewFile.url} download={previewFile.key}>
+                      <Button variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
+                        下载
+                      </Button>
+                    </a>
+                    {/\.(jpe?g|png|gif|webp|bmp)$/i.test(previewFile.key) && (
+                      <Button variant="outline" onClick={() => handleCopyImage(previewFile)}>
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        复制图片
+                      </Button>
+                    )}
+                    <Button variant="outline" onClick={() => handleCopy(previewFile.url)}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      复制链接
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          disabled={
+                            Boolean(
+                              !profile?.role ||
+                                (profile.role !== 'admin' &&
+                                  (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
+                            ) || isDeleting
+                          }
+                          title={
+                            !profile?.role ||
+                            (profile.role !== 'admin' &&
+                              (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
+                              ? '你没有删除此文件的权限'
+                              : '删除文件'
+                          }
+                        >
+                          {isDeleting ? (
+                            '删除中...'
+                          ) : (
+                            <>
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              删除
+                            </>
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>确认删除？</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            确认删除 {previewFile.key}？此操作不可恢复。
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>取消</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(previewFile.key)}
+                            disabled={isDeleting}
+                          >
+                            {isDeleting ? '删除中...' : '删除'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <Button
+                      variant="secondary"
+                      onClick={() => setPreviewFile(null)}
+                      className="sm:hidden"
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      关闭
+                    </Button>
+                  </div>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
     </TooltipProvider>
   );
 }
