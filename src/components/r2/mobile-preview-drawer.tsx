@@ -83,7 +83,7 @@ export function MobilePreviewDrawer({
             <ChevronRight className="h-6 w-6" />
           </Button>
         </div>
-        <DrawerFooter>
+        <DrawerFooter className="overflow-y-auto">
           <div className="flex flex-col gap-2">
             <a href={previewFile.url} download={previewFile.key} className="w-full">
               <Button variant="outline" className="w-full">
