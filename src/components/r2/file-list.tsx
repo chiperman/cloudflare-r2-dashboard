@@ -202,7 +202,12 @@ export function FileList({
   const [isCreateFolderDrawerOpen, setIsCreateFolderDrawerOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+  }, [previewFile]);
 
   const handleOpenPreview = (file: R2File) => {
     const index = files.findIndex((f) => f.key === file.key);
@@ -1279,15 +1284,22 @@ export function FileList({
                       Your browser does not support the video tag.
                     </video>
                   ) : (
-                    <div className="relative w-full h-full max-w-[70vh] max-h-[70vh]">
+                    <div
+                      className="relative w-full h-full max-w-[70vh] max-h-[70vh] overflow-hidden"
+                      style={{
+                        backgroundImage: !isImageLoaded && previewFile.blurDataURL ? `url(${previewFile.blurDataURL})` : 'none',
+                        backgroundSize: 'contain',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                      }}
+                    >
                       <Image
                         key={previewFile.key}
                         src={previewFile.url}
                         alt={previewFile.key}
                         fill
                         className="object-contain"
-                        placeholder={previewFile.blurDataURL ? 'blur' : 'empty'}
-                        {...(previewFile.blurDataURL && { blurDataURL: previewFile.blurDataURL })}
+                        onLoad={() => setIsImageLoaded(true)}
                       />
                     </div>
                   )}
