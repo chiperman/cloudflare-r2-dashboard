@@ -26,6 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -418,6 +419,75 @@ export function FileList({
     }, 3000);
   };
 
+  const handleCopyImage = async (file: R2File) => {
+    try {
+      const response = await fetch(file.url);
+      if (!response.ok) throw new Error('Failed to fetch image data');
+      const originalBlob = await response.blob();
+
+      if (!originalBlob.type.startsWith('image/')) {
+        toast({
+          title: '复制失败',
+          description: '该文件不是有效的图片格式。',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Convert image to PNG blob to ensure clipboard compatibility
+      const pngBlob = await new Promise<Blob | null>((resolve) => {
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            canvas.toBlob(resolve, 'image/png');
+          } else {
+            resolve(null);
+          }
+          URL.revokeObjectURL(img.src); // Clean up blob URL
+        };
+        img.onerror = () => {
+          resolve(null);
+          URL.revokeObjectURL(img.src); // Clean up blob URL
+        };
+        img.src = URL.createObjectURL(originalBlob);
+      });
+
+      if (!pngBlob) {
+        throw new Error('无法将图片转换为PNG格式');
+      }
+
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': pngBlob }),
+      ]);
+
+      toast({
+        title: '成功',
+        description: '图片已复制到剪贴板',
+      });
+    } catch (err) {
+      console.error('Failed to copy image:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      if (errorMessage.includes('denied')) {
+        toast({
+          title: '复制失败',
+          description: '需要剪贴板写入权限。',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: '复制失败',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
   const handleSelect = (key: string) => {
     setSelectedKeys((prev) => {
       const next = new Set(prev);
@@ -804,6 +874,15 @@ export function FileList({
                               <span>下载</span>
                             </a>
                           </DropdownMenuItem>
+                          {/\.(jpe?g|png|gif|webp|bmp)$/i.test(file.key) && (
+                            <DropdownMenuItem
+                              onSelect={() => handleCopyImage(file)}
+                              className="cursor-pointer"
+                            >
+                              <ImageIcon className="mr-2 h-4 w-4" />
+                              <span>复制图片</span>
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onSelect={() => handleCopy(file.url)}
                             className="cursor-pointer"
@@ -853,16 +932,28 @@ export function FileList({
                             <DrawerDescription>选择一个操作</DrawerDescription>
                           </DrawerHeader>
                           <div className="p-4 grid gap-2">
-                            <Button variant="outline" asChild>
-                              <a href={file.url} download={file.key}>
-                                <Download className="mr-2 h-4 w-4" />
-                                <span>下载</span>
-                              </a>
-                            </Button>
-                            <Button variant="outline" onClick={() => handleCopy(file.url)}>
-                              <Copy className="mr-2 h-4 w-4" />
-                              <span>复制链接</span>
-                            </Button>
+                            <DrawerClose asChild>
+                              <Button variant="outline" asChild>
+                                <a href={file.url} download={file.key}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  <span>下载</span>
+                                </a>
+                              </Button>
+                            </DrawerClose>
+                            {/\.(jpe?g|png|gif|webp|bmp)$/i.test(file.key) && (
+                              <DrawerClose asChild>
+                                <Button variant="outline" onClick={() => handleCopyImage(file)}>
+                                  <ImageIcon className="mr-2 h-4 w-4" />
+                                  <span>复制图片</span>
+                                </Button>
+                              </DrawerClose>
+                            )}
+                            <DrawerClose asChild>
+                              <Button variant="outline" onClick={() => handleCopy(file.url)}>
+                                <Copy className="mr-2 h-4 w-4" />
+                                <span>复制链接</span>
+                              </Button>
+                            </DrawerClose>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant="destructive"
