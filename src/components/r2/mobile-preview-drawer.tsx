@@ -49,11 +49,11 @@ export function MobilePreviewDrawer({
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b flex-shrink-0">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 min-w-0">
           <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
             <X className="h-6 w-6" />
           </Button>
-          <h2 className="font-semibold truncate text-lg">{previewFile.key}</h2>
+          <h2 className="font-semibold text-base overflow-hidden text-ellipsis whitespace-nowrap">{previewFile.key}</h2>
         </div>
       </header>
 
