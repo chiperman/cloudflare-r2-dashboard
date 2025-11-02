@@ -1270,6 +1270,12 @@ export function FileList({
                       下载
                     </Button>
                   </a>
+                  {/\.(jpe?g|png|gif|webp|bmp)$/i.test(previewFile.key) && (
+                    <Button variant="outline" onClick={() => handleCopyImage(previewFile)}>
+                      <ImageIcon className="mr-2 h-4 w-4" />
+                      复制图片
+                    </Button>
+                  )}
                   <Button variant="outline" onClick={() => handleCopy(previewFile.url)}>
                     <Copy className="mr-2 h-4 w-4" />
                     复制链接
