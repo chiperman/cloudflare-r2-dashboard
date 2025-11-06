@@ -14,7 +14,7 @@ import {
   DrawerTrigger,
 } from '@/components/ui/drawer';
 import { LogoutButton } from './logout-button';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -24,6 +24,7 @@ export function MobileMenu() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const supabase = createClient();
   const router = useRouter();
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const {
@@ -37,6 +38,16 @@ export function MobileMenu() {
       subscription.unsubscribe();
     };
   }, [supabase.auth, router]);
+
+  useEffect(() => {
+    if (isDrawerOpen) {
+      const timer = setTimeout(() => {
+        hiddenInputRef.current?.focus({ preventScroll: true });
+        hiddenInputRef.current?.blur();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isDrawerOpen]);
 
   const handleLogoutSuccess = () => {
     setIsDrawerOpen(false);
@@ -74,6 +85,7 @@ export function MobileMenu() {
               <Button variant="outline">关闭</Button>
             </DrawerClose>
           </DrawerFooter>
+          <input ref={hiddenInputRef} style={{ position: 'absolute', left: '-9999px' }} readOnly />
         </DrawerContent>
       </Drawer>
     </div>

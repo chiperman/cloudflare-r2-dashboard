@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, Fragment } from 'react';
+import { useState, useMemo, useEffect, Fragment, useRef } from 'react';
 import Image from 'next/image';
 import useSWR from 'swr';
 import {
@@ -205,14 +205,32 @@ export function FileList({
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
+  const [isPreviewDrawerOpen, setIsPreviewDrawerOpen] = useState(false);
+  const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null);
+  const [isFileActionDrawerOpen, setIsFileActionDrawerOpen] = useState(false);
+
+  const fileActionInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     setIsImageLoaded(false);
   }, [previewFile]);
 
-  const handleOpenPreview = (file: R2File) => {
-    const index = files.findIndex((f) => f.key === file.key);
+  useEffect(() => {
+    if (isFileActionDrawerOpen) {
+      const timer = setTimeout(() => {
+        fileActionInputRef.current?.focus({ preventScroll: true });
+        fileActionInputRef.current?.blur();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isFileActionDrawerOpen]);
+
+  const handleOpenPreview = (file: R2File, index: number) => {
     setPreviewFile(file);
     setPreviewIndex(index);
+    if (isMobile) {
+      setIsPreviewDrawerOpen(true);
+    }
   };
 
   const handleNextPreview = () => {
@@ -825,7 +843,7 @@ export function FileList({
                 </TableCell>
               </TableRow>
             ))}
-            {files.map((file: R2File) => (
+            {files.map((file: R2File, index) => (
               <TableRow key={file.key} className="h-[50px]">
                 <TableCell className="text-center">
                   <Checkbox
@@ -836,7 +854,7 @@ export function FileList({
                 <TableCell className="flex items-center justify-center">
                   <button
                     className="relative group transition-transform hover:scale-105"
-                    onClick={() => handleOpenPreview(file)}
+                    onClick={() => handleOpenPreview(file, index)}
                   >
                     <div className="relative rounded-md overflow-hidden">
                       <div className="bg-muted w-[50px] h-[50px] flex items-center justify-center">
@@ -946,7 +964,7 @@ export function FileList({
 
                     {/* Mobile Drawer */}
                     <div className="md:hidden">
-                      <Drawer>
+                      <Drawer open={isFileActionDrawerOpen} onOpenChange={setIsFileActionDrawerOpen}>
                         <DrawerTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
                             <span className="sr-only">Open menu</span>
@@ -1009,6 +1027,7 @@ export function FileList({
                               <Button variant="outline">取消</Button>
                             </DrawerClose>
                           </DrawerFooter>
+                          <input ref={fileActionInputRef} style={{ position: 'absolute', left: '-9999px' }} readOnly />
                         </DrawerContent>
                       </Drawer>
                     </div>
@@ -1240,8 +1259,8 @@ export function FileList({
       {/* Preview Components */}
       {isMobile ? (
         <MobilePreviewDrawer
-          open={!!previewFile}
-          onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
+          open={isPreviewDrawerOpen}
+          onOpenChange={setIsPreviewDrawerOpen}
           previewFile={previewFile}
           handlePrevPreview={handlePrevPreview}
           handleNextPreview={handleNextPreview}
@@ -1378,14 +1397,6 @@ export function FileList({
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                    <Button
-                      variant="secondary"
-                      onClick={() => setPreviewFile(null)}
-                      className="sm:hidden"
-                    >
-                      <X className="mr-2 h-4 w-4" />
-                      关闭
-                    </Button>
                   </div>
                 </DialogFooter>
               </>
