@@ -201,10 +201,38 @@ export function FileList({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isImageReadyForTransition, setIsImageReadyForTransition] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null);
   const [actionMenuFile, setActionMenuFile] = useState<R2File | null>(null);
+
+  useEffect(() => {
+    setIsImageLoaded(false);
+    setIsImageReadyForTransition(false);
+  }, [previewFile, actionMenuFile]);
+
+  useEffect(() => {
+    let delayTimer: NodeJS.Timeout;
+    let readyTimer: NodeJS.Timeout;
+
+    if (actionMenuFile) {
+      // 确保组件有时间渲染 opacity:0 状态
+      readyTimer = setTimeout(() => {
+        setIsImageReadyForTransition(true);
+        // 引入用户指定的延迟
+        delayTimer = setTimeout(() => {
+          setIsImageLoaded(true);
+        }, 300); // 300毫秒延迟
+      }, 10); // 极短的延迟，确保渲染完成
+
+    }
+
+    return () => {
+      clearTimeout(delayTimer);
+      clearTimeout(readyTimer);
+    };
+  }, [actionMenuFile]);
 
   useEffect(() => {
     setIsImageLoaded(false);
@@ -1202,12 +1230,22 @@ export function FileList({
             <ScrollArea className="overflow-y-auto">
               {actionMenuFile && /\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) && (
                 <div className="px-4 pt-0 pb-4 flex justify-center items-center">
-                  <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden bg-muted">
+                  <div className="relative w-full max-w-xs h-64 rounded-lg overflow-hidden">
+                    {!isImageLoaded && actionMenuFile.blurDataURL && (
+                      <Image
+                        src={actionMenuFile.blurDataURL}
+                        alt={actionMenuFile.key}
+                        fill
+                        className="object-contain filter blur-lg"
+                      />
+                    )}
                     <Image
                       src={actionMenuFile.url}
                       alt={actionMenuFile.key}
                       fill
-                      className="object-contain"
+                      className={`object-contain transition-opacity duration-300 ${
+                        isImageLoaded ? 'opacity-100' : 'opacity-0'
+                      }`}
                     />
                   </div>
                 </div>
@@ -1332,7 +1370,9 @@ export function FileList({
                       alt={previewFile.key}
                       fill
                       className="object-contain"
-                      onLoad={() => setIsImageLoaded(true)}
+                      onLoad={() => {
+                        setTimeout(() => setIsImageLoaded(true), 5000);
+                      }}
                     />
                   </div>
                 )}
