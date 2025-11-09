@@ -1212,7 +1212,7 @@ export function FileList({
                   </div>
                 </div>
               )}
-              <div className="p-4 pt-0 grid gap-2">
+              <div className="p-4 pt-0 grid grid-cols-2 gap-2">
                 <DrawerClose asChild>
                   <Button variant="outline" asChild>
                     <a href={actionMenuFile.url} download={actionMenuFile.key}>
