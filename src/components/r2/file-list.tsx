@@ -206,21 +206,9 @@ export function FileList({
   const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null);
   const [actionMenuFile, setActionMenuFile] = useState<R2File | null>(null);
 
-  const fileActionInputRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     setIsImageLoaded(false);
   }, [previewFile]);
-
-  useEffect(() => {
-    if (actionMenuFile) {
-      const timer = setTimeout(() => {
-        fileActionInputRef.current?.focus({ preventScroll: true });
-        fileActionInputRef.current?.blur();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [actionMenuFile]);
 
   const handleOpenPreview = (file: R2File, index: number) => {
     if (isMobile) {
@@ -1293,7 +1281,6 @@ export function FileList({
                 <Button variant="outline">取消</Button>
               </DrawerClose>
             </DrawerFooter>
-            <input ref={fileActionInputRef} style={{ position: 'absolute', left: '-9999px' }} readOnly />
           </DrawerContent>
         </Drawer>
       )}
