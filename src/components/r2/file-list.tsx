@@ -205,6 +205,7 @@ export function FileList({
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const [currentMobilePreviewIndex, setCurrentMobilePreviewIndex] = useState<number | null>(null);
+  const [showImagePreviewInDrawer, setShowImagePreviewInDrawer] = useState(false);
 
   const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null);
   const [actionMenuFile, setActionMenuFile] = useState<R2File | null>(null);
@@ -227,7 +228,6 @@ export function FileList({
           setIsImageLoaded(true);
         }, 300); // 300毫秒延迟
       }, 10); // 极短的延迟，确保渲染完成
-
     }
 
     return () => {
@@ -244,6 +244,7 @@ export function FileList({
     if (isMobile) {
       setActionMenuFile(file);
       setCurrentMobilePreviewIndex(index); // 直接使用传入的 index
+      setShowImagePreviewInDrawer(true); // 点击图片时显示预览
       return;
     }
     setPreviewFile(file);
@@ -537,9 +538,7 @@ export function FileList({
         throw new Error('无法将图片转换为PNG格式');
       }
 
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': pngBlob }),
-      ]);
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
 
       toast({
         title: '成功',
@@ -998,7 +997,10 @@ export function FileList({
                       <Button
                         variant="ghost"
                         className="h-8 w-8 p-0"
-                        onClick={() => setActionMenuFile(file)}
+                        onClick={() => {
+                          setActionMenuFile(file);
+                          setShowImagePreviewInDrawer(false); // 点击菜单时不显示预览
+                        }}
                       >
                         <span className="sr-only">Open menu</span>
                         <MoreHorizontal className="h-4 w-4" />
@@ -1236,59 +1238,69 @@ export function FileList({
           onOpenChange={(isOpen) => {
             if (!isOpen) {
               setActionMenuFile(null);
+              setShowImagePreviewInDrawer(false); // Drawer 关闭时重置预览状态
             }
           }}
         >
           <DrawerContent>
             <DrawerHeader>
-              <DrawerTitle>{actionMenuFile.key}</DrawerTitle>
+              <DrawerTitle>
+                <span className="truncate block max-w-full">{actionMenuFile.key}</span>
+              </DrawerTitle>
               <DrawerDescription>选择一个操作</DrawerDescription>
             </DrawerHeader>
             <ScrollArea className="overflow-y-auto">
-              {actionMenuFile && /\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) && (
-                <div className="px-4 pt-0 pb-4 flex justify-center items-center">
-                  <div className="relative w-full max-w-xs h-64 rounded-lg overflow-hidden">
-                    {!isImageLoaded && actionMenuFile.blurDataURL && (
-                      <Image
-                        key={actionMenuFile.key + '-blur'}
-                        src={actionMenuFile.blurDataURL}
-                        alt={actionMenuFile.key}
-                        fill
-                        className="object-contain filter blur-lg"
-                      />
-                    )}
-                    {isImageReadyForTransition && (
-                      <Image
-                        key={actionMenuFile.key + '-hd'}
-                        src={actionMenuFile.url}
-                        alt={actionMenuFile.key}
-                        fill
-                        className={`object-contain transition-opacity duration-300 ${
-                          isImageLoaded ? 'opacity-100' : 'opacity-0'
-                        }`}
-                      />
-                    )}
+              {actionMenuFile &&
+                /\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) &&
+                showImagePreviewInDrawer && (
+                  <div className="px-4 pt-0 pb-4 flex justify-center items-center">
+                    <div className="relative w-full max-w-xs h-64 rounded-lg overflow-hidden">
+                      {!isImageLoaded && actionMenuFile.blurDataURL && (
+                        <Image
+                          key={actionMenuFile.key + '-blur'}
+                          src={actionMenuFile.blurDataURL}
+                          alt={actionMenuFile.key}
+                          fill
+                          className="object-contain filter blur-lg"
+                        />
+                      )}
+                      {isImageReadyForTransition && (
+                        <Image
+                          key={actionMenuFile.key + '-hd'}
+                          src={actionMenuFile.url}
+                          alt={actionMenuFile.key}
+                          fill
+                          className={`object-contain transition-opacity duration-300 ${
+                            isImageLoaded ? 'opacity-100' : 'opacity-0'
+                          }`}
+                        />
+                      )}
 
-                    {/* 添加上一张/下一张按钮 */}
-                    <Button
-                      variant="ghost"
-                      onClick={handleMobilePrevPreview}
-                      disabled={currentMobilePreviewIndex === null || currentMobilePreviewIndex <= 0}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
-                    >
-                      <ChevronLeft className="h-8 w-8" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={handleMobileNextPreview}
-                      disabled={currentMobilePreviewIndex === null || currentMobilePreviewIndex >= files.length - 1}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
-                    >
-                      <ChevronRight className="h-8 w-8" />
-                    </Button>
+                      {/* 添加上一张/下一张按钮 */}
+                      <Button
+                        variant="ghost"
+                        onClick={handleMobilePrevPreview}
+                        disabled={
+                          currentMobilePreviewIndex === null || currentMobilePreviewIndex <= 0
+                        }
+                        className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
+                      >
+                        <ChevronLeft className="h-8 w-8" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={handleMobileNextPreview}
+                        disabled={
+                          currentMobilePreviewIndex === null ||
+                          currentMobilePreviewIndex >= files.length - 1
+                        }
+                        className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
+                      >
+                        <ChevronRight className="h-8 w-8" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
               <div className="p-4 pt-0 grid grid-cols-2 gap-2">
                 <DrawerClose asChild>
                   <Button variant="outline" asChild>
@@ -1320,7 +1332,8 @@ export function FileList({
                         Boolean(
                           !profile?.role ||
                             (profile.role !== 'admin' &&
-                              (!actionMenuFile.user_id || (user && user.id !== actionMenuFile.user_id)))
+                              (!actionMenuFile.user_id ||
+                                (user && user.id !== actionMenuFile.user_id)))
                         ) || isDeleting
                       }
                       title={
@@ -1370,7 +1383,9 @@ export function FileList({
           {previewFile && (
             <>
               <DialogHeader>
-                <DialogTitle>{previewFile.key}</DialogTitle>
+                <div className="max-w-sm">
+                  <DialogTitle>{previewFile.key}</DialogTitle>
+                </div>
               </DialogHeader>
               <div className="mt-4 relative w-full h-[70vh] flex items-center justify-center">
                 <Button
@@ -1397,7 +1412,10 @@ export function FileList({
                   <div
                     className="relative w-full h-full max-w-[70vh] max-h-[70vh] overflow-hidden"
                     style={{
-                      backgroundImage: !isImageLoaded && previewFile.blurDataURL ? `url(${previewFile.blurDataURL})` : 'none',
+                      backgroundImage:
+                        !isImageLoaded && previewFile.blurDataURL
+                          ? `url(${previewFile.blurDataURL})`
+                          : 'none',
                       backgroundSize: 'contain',
                       backgroundPosition: 'center',
                       backgroundRepeat: 'no-repeat',
