@@ -204,6 +204,8 @@ export function FileList({
   const [isImageReadyForTransition, setIsImageReadyForTransition] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
+  const [currentMobilePreviewIndex, setCurrentMobilePreviewIndex] = useState<number | null>(null);
+
   const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null);
   const [actionMenuFile, setActionMenuFile] = useState<R2File | null>(null);
 
@@ -241,6 +243,7 @@ export function FileList({
   const handleOpenPreview = (file: R2File, index: number) => {
     if (isMobile) {
       setActionMenuFile(file);
+      setCurrentMobilePreviewIndex(index); // 直接使用传入的 index
       return;
     }
     setPreviewFile(file);
@@ -259,6 +262,20 @@ export function FileList({
     const prevIndex = previewIndex - 1;
     setPreviewFile(files[prevIndex]);
     setPreviewIndex(prevIndex);
+  };
+
+  const handleMobileNextPreview = () => {
+    if (currentMobilePreviewIndex === null || currentMobilePreviewIndex >= files.length - 1) return;
+    const nextIndex = currentMobilePreviewIndex + 1;
+    setActionMenuFile(files[nextIndex]);
+    setCurrentMobilePreviewIndex(nextIndex);
+  };
+
+  const handleMobilePrevPreview = () => {
+    if (currentMobilePreviewIndex === null || currentMobilePreviewIndex <= 0) return;
+    const prevIndex = currentMobilePreviewIndex - 1;
+    setActionMenuFile(files[prevIndex]);
+    setCurrentMobilePreviewIndex(prevIndex);
   };
 
   const handleClearSearch = () => {
@@ -1247,6 +1264,26 @@ export function FileList({
                         isImageLoaded ? 'opacity-100' : 'opacity-0'
                       }`}
                     />
+
+                    {/* 添加上一张/下一张按钮 */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleMobilePrevPreview}
+                      disabled={currentMobilePreviewIndex === null || currentMobilePreviewIndex <= 0}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/70"
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleMobileNextPreview}
+                      disabled={currentMobilePreviewIndex === null || currentMobilePreviewIndex >= files.length - 1}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/70"
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </Button>
                   </div>
                 </div>
               )}
