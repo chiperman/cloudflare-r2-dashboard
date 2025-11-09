@@ -1211,7 +1211,19 @@ export function FileList({
               <DrawerTitle>{actionMenuFile.key}</DrawerTitle>
               <DrawerDescription>选择一个操作</DrawerDescription>
             </DrawerHeader>
-            <div className="p-4 grid gap-2">
+            {actionMenuFile && /\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) && (
+              <div className="px-4 pt-0 pb-4 flex justify-center items-center">
+                <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden bg-muted">
+                  <Image
+                    src={actionMenuFile.url}
+                    alt={actionMenuFile.key}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              </div>
+            )}
+            <div className="p-4 pt-0 grid gap-2">
               <DrawerClose asChild>
                 <Button variant="outline" asChild>
                   <a href={actionMenuFile.url} download={actionMenuFile.key}>
