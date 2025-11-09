@@ -1250,39 +1250,41 @@ export function FileList({
                   <div className="relative w-full max-w-xs h-64 rounded-lg overflow-hidden">
                     {!isImageLoaded && actionMenuFile.blurDataURL && (
                       <Image
+                        key={actionMenuFile.key + '-blur'}
                         src={actionMenuFile.blurDataURL}
                         alt={actionMenuFile.key}
                         fill
                         className="object-contain filter blur-lg"
                       />
                     )}
-                    <Image
-                      src={actionMenuFile.url}
-                      alt={actionMenuFile.key}
-                      fill
-                      className={`object-contain transition-opacity duration-300 ${
-                        isImageLoaded ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    />
+                    {isImageReadyForTransition && (
+                      <Image
+                        key={actionMenuFile.key + '-hd'}
+                        src={actionMenuFile.url}
+                        alt={actionMenuFile.key}
+                        fill
+                        className={`object-contain transition-opacity duration-300 ${
+                          isImageLoaded ? 'opacity-100' : 'opacity-0'
+                        }`}
+                      />
+                    )}
 
                     {/* 添加上一张/下一张按钮 */}
                     <Button
                       variant="ghost"
-                      size="icon"
                       onClick={handleMobilePrevPreview}
                       disabled={currentMobilePreviewIndex === null || currentMobilePreviewIndex <= 0}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/70"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
                     >
-                      <ChevronLeft className="h-6 w-6" />
+                      <ChevronLeft className="h-8 w-8" />
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon"
                       onClick={handleMobileNextPreview}
                       disabled={currentMobilePreviewIndex === null || currentMobilePreviewIndex >= files.length - 1}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 text-white bg-black/50 hover:bg-black/70"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
                     >
-                      <ChevronRight className="h-6 w-6" />
+                      <ChevronRight className="h-8 w-8" />
                     </Button>
                   </div>
                 </div>
