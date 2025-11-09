@@ -1199,83 +1199,85 @@ export function FileList({
               <DrawerTitle>{actionMenuFile.key}</DrawerTitle>
               <DrawerDescription>选择一个操作</DrawerDescription>
             </DrawerHeader>
-            {actionMenuFile && /\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) && (
-              <div className="px-4 pt-0 pb-4 flex justify-center items-center">
-                <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden bg-muted">
-                  <Image
-                    src={actionMenuFile.url}
-                    alt={actionMenuFile.key}
-                    fill
-                    className="object-contain"
-                  />
+            <ScrollArea className="overflow-y-auto">
+              {actionMenuFile && /\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) && (
+                <div className="px-4 pt-0 pb-4 flex justify-center items-center">
+                  <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden bg-muted">
+                    <Image
+                      src={actionMenuFile.url}
+                      alt={actionMenuFile.key}
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
-            <div className="p-4 pt-0 grid gap-2">
-              <DrawerClose asChild>
-                <Button variant="outline" asChild>
-                  <a href={actionMenuFile.url} download={actionMenuFile.key}>
-                    <Download className="mr-2 h-4 w-4" />
-                    <span>下载</span>
-                  </a>
-                </Button>
-              </DrawerClose>
-              {/\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) && (
+              )}
+              <div className="p-4 pt-0 grid gap-2">
                 <DrawerClose asChild>
-                  <Button variant="outline" onClick={() => handleCopyImage(actionMenuFile)}>
-                    <ImageIcon className="mr-2 h-4 w-4" />
-                    <span>复制图片移动版菜单</span>
+                  <Button variant="outline" asChild>
+                    <a href={actionMenuFile.url} download={actionMenuFile.key}>
+                      <Download className="mr-2 h-4 w-4" />
+                      <span>下载</span>
+                    </a>
                   </Button>
                 </DrawerClose>
-              )}
-              <DrawerClose asChild>
-                <Button variant="outline" onClick={() => handleCopy(actionMenuFile.url)}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  <span>复制链接</span>
-                </Button>
-              </DrawerClose>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    disabled={
-                      Boolean(
-                        !profile?.role ||
-                          (profile.role !== 'admin' &&
-                            (!actionMenuFile.user_id || (user && user.id !== actionMenuFile.user_id)))
-                      ) || isDeleting
-                    }
-                    title={
-                      !profile?.role ||
-                      (profile.role !== 'admin' &&
-                        (!actionMenuFile.user_id || (user && user.id !== actionMenuFile.user_id)))
-                        ? '你没有删除此文件的权限'
-                        : '删除文件'
-                    }
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    <span>{isDeleting ? '删除中...' : '删除'}</span>
+                {/\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) && (
+                  <DrawerClose asChild>
+                    <Button variant="outline" onClick={() => handleCopyImage(actionMenuFile)}>
+                      <ImageIcon className="mr-2 h-4 w-4" />
+                      <span>复制图片移动版菜单</span>
+                    </Button>
+                  </DrawerClose>
+                )}
+                <DrawerClose asChild>
+                  <Button variant="outline" onClick={() => handleCopy(actionMenuFile.url)}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    <span>复制链接</span>
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>确认删除？</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      确认删除 {actionMenuFile.key}？此操作不可恢复。
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>取消</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => handleDelete(actionMenuFile.key)}
-                      disabled={isDeleting}
+                </DrawerClose>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      disabled={
+                        Boolean(
+                          !profile?.role ||
+                            (profile.role !== 'admin' &&
+                              (!actionMenuFile.user_id || (user && user.id !== actionMenuFile.user_id)))
+                        ) || isDeleting
+                      }
+                      title={
+                        !profile?.role ||
+                        (profile.role !== 'admin' &&
+                          (!actionMenuFile.user_id || (user && user.id !== actionMenuFile.user_id)))
+                          ? '你没有删除此文件的权限'
+                          : '删除文件'
+                      }
                     >
-                      {isDeleting ? '删除中...' : '删除'}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>{isDeleting ? '删除中...' : '删除'}</span>
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>确认删除？</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        确认删除 {actionMenuFile.key}？此操作不可恢复。
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>取消</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDelete(actionMenuFile.key)}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? '删除中...' : '删除'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </ScrollArea>
             <DrawerFooter>
               <DrawerClose asChild>
                 <Button variant="outline">取消</Button>
