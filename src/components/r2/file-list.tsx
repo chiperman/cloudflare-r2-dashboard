@@ -1245,7 +1245,7 @@ export function FileList({
           <DrawerContent>
             <DrawerHeader>
               <DrawerTitle>
-                <span className="truncate block max-w-full">{actionMenuFile.key}</span>
+                <span className="truncate block max-w-[16rem] mx-auto">{actionMenuFile.key}</span>
               </DrawerTitle>
               <DrawerDescription>选择一个操作</DrawerDescription>
             </DrawerHeader>
