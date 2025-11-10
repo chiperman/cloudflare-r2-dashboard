@@ -955,7 +955,7 @@ export function FileList({
                               className="cursor-pointer"
                             >
                               <ImageIcon className="mr-2 h-4 w-4" />
-                              <span>复制图片桌面版菜单</span>
+                              <span>复制图片</span>
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem
@@ -1314,7 +1314,7 @@ export function FileList({
                   <DrawerClose asChild>
                     <Button variant="outline" onClick={() => handleCopyImage(actionMenuFile)}>
                       <ImageIcon className="mr-2 h-4 w-4" />
-                      <span>复制图片移动版菜单</span>
+                      <span>复制图片</span>
                     </Button>
                   </DrawerClose>
                 )}
@@ -1454,7 +1454,7 @@ export function FileList({
                   {/\.(jpe?g|png|gif|webp|bmp)$/i.test(previewFile.key) && (
                     <Button variant="outline" onClick={() => handleCopyImage(previewFile)}>
                       <ImageIcon className="mr-2 h-4 w-4" />
-                      复制图片桌面版本预览
+                      复制图片
                     </Button>
                   )}
                   <Button variant="outline" onClick={() => handleCopy(previewFile.url)}>
