@@ -1383,7 +1383,7 @@ export function FileList({
           {previewFile && (
             <>
               <DialogHeader>
-                <div className="max-w-sm">
+                <div className="max-w-xl">
                   <DialogTitle>{previewFile.key}</DialogTitle>
                 </div>
               </DialogHeader>
