@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 
 interface LoginFormProps extends React.ComponentPropsWithoutRef<'div'> {
@@ -25,6 +26,7 @@ export function LoginForm({
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,14 +74,23 @@ export function LoginForm({
                 忘记密码？
               </button>
             </div>
-            <Input
-              id="password"
-              type="password"
-              placeholder="请输入密码"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="请输入密码"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <Button type="submit" className="w-full" disabled={isLoading}>

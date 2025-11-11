@@ -1,5 +1,5 @@
-'use client';
-
+import { Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -66,6 +66,9 @@ export default function UpdatePasswordForm({
 }: React.ComponentPropsWithoutRef<'div'> & { onSuccess?: () => void }) {
   const { toast } = useToast();
   const supabase = createClient();
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -124,7 +127,26 @@ export default function UpdatePasswordForm({
                   <FormItem>
                     <FormLabel>当前密码</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="请输入当前密码" {...field} />
+                      <div className="relative">
+                        <Input
+                          type={showCurrentPassword ? 'text' : 'password'}
+                          placeholder="请输入当前密码"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowCurrentPassword(!showCurrentPassword)
+                          }
+                          className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+                        >
+                          {showCurrentPassword ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -137,7 +159,24 @@ export default function UpdatePasswordForm({
                   <FormItem>
                     <FormLabel>新密码</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="请输入新密码" {...field} />
+                      <div className="relative">
+                        <Input
+                          type={showNewPassword ? 'text' : 'password'}
+                          placeholder="请输入新密码"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+                        >
+                          {showNewPassword ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -150,13 +189,36 @@ export default function UpdatePasswordForm({
                   <FormItem>
                     <FormLabel>确认新密码</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="请再次输入新密码" {...field} />
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="请再次输入新密码"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={form.formState.isSubmitting}
+              >
                 {form.formState.isSubmitting ? '更新中...' : '确认更新'}
               </Button>
             </form>

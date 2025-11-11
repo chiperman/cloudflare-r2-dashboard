@@ -1,12 +1,10 @@
-'use client';
-
-import { cn } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-
+import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface SignUpFormProps extends React.ComponentPropsWithoutRef<'div'> {
   onSignUpSuccess?: () => void;
@@ -24,6 +22,8 @@ export function SignUpForm({
   const [repeatPassword, setRepeatPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,27 +73,49 @@ export function SignUpForm({
             <div className="flex items-center">
               <Label htmlFor="password">密码</Label>
             </div>
-            <Input
-              id="password"
-              type="password"
-              placeholder="请输入密码"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="请输入密码"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
           <div className="grid gap-2">
             <div className="flex items-center">
               <Label htmlFor="repeat-password">重复密码</Label>
             </div>
-            <Input
-              id="repeat-password"
-              type="password"
-              placeholder="请再次输入密码"
-              required
-              value={repeatPassword}
-              onChange={(e) => setRepeatPassword(e.target.value)}
-            />
+            <div className="relative">
+              <Input
+                id="repeat-password"
+                type={showRepeatPassword ? 'text' : 'password'}
+                placeholder="请再次输入密码"
+                required
+                value={repeatPassword}
+                onChange={(e) => setRepeatPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowRepeatPassword(!showRepeatPassword)}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+              >
+                {showRepeatPassword ? (
+                  <EyeOff size={18} />
+                ) : (
+                  <Eye size={18} />
+                )}
+              </button>
+            </div>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <Button type="submit" className="w-full" disabled={isLoading}>
@@ -106,7 +128,9 @@ export function SignUpForm({
             type="button"
             onClick={onSwitchToLogin}
             className="underline underline-offset-4"
-          >登录</button>
+          >
+            登录
+          </button>
         </div>
       </form>
     </div>

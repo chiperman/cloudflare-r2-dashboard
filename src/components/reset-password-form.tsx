@@ -18,6 +18,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { cn } from '@/lib/utils';
+import { Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -39,6 +40,8 @@ export default function ResetPasswordForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -109,7 +112,24 @@ export default function ResetPasswordForm({
                   <FormItem>
                     <FormLabel>新密码</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="请输入新密码" {...field} />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="请输入新密码"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+                        >
+                          {showPassword ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -122,7 +142,26 @@ export default function ResetPasswordForm({
                   <FormItem>
                     <FormLabel>确认新密码</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="请再次输入新密码" {...field} />
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="请再次输入新密码"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                          className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
