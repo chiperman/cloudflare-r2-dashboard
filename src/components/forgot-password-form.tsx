@@ -3,7 +3,6 @@
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
@@ -43,57 +42,43 @@ export function ForgotPasswordForm({
   };
 
   return (
-    <div className={cn('flex flex-col gap-6', className)} {...props}>
+    <div className={cn(className)} {...props}>
       {success ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">请检查您的邮箱</CardTitle>
-            <CardDescription>密码重置指引已发送</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              如果您使用邮箱和密码注册，您将会收到一封密码重置邮件。
-            </p>
-          </CardContent>
-        </Card>
+        <div>
+          <p className="text-sm text-muted-foreground">
+            如果您使用邮箱和密码注册，您将会收到一封密码重置邮件。
+          </p>
+        </div>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">重置您的密码</CardTitle>
-            <CardDescription>输入您的邮箱，我们将向您发送重置密码的链接</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleForgotPassword}>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">邮箱</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="email@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? '发送中...' : '发送重置邮件'}
-                </Button>
-              </div>
-              <div className="mt-4 text-center text-sm">
-                已经有账户了?{' '}
-                <button
-                  type="button"
-                  onClick={onSwitchToLogin}
-                  className="underline underline-offset-4"
-                >
-                  登录
-                </button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <form onSubmit={handleForgotPassword}>
+          <div className="flex flex-col gap-6">
+            <div className="grid gap-2">
+              <Label htmlFor="email">邮箱</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="email@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? '发送中...' : '发送重置邮件'}
+            </Button>
+          </div>
+          <div className="mt-4 text-center text-sm">
+            已经有账户了?{' '}
+            <button
+              type="button"
+              onClick={onSwitchToLogin}
+              className="underline underline-offset-4"
+            >
+              登录
+            </button>
+          </div>
+        </form>
       )}
     </div>
   );
