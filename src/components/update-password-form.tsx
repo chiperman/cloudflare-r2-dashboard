@@ -112,7 +112,7 @@ export default function UpdatePasswordForm({
 
   return (
     <div className={cn('flex flex-col gap-6', className)}>
-      <Card>
+      <Card className="border sm:border-0">
         <CardHeader>
           <CardTitle className="text-2xl">更新密码</CardTitle>
           <CardDescription>为了您的账户安全，我们建议您定期更新密码。</CardDescription>

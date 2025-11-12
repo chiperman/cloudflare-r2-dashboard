@@ -18,13 +18,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
-const formSchema = z
-  .object({
-    displayName: z
-      .string()
-      .min(2, { message: '昵称至少需要2个字符' })
-      .max(30, { message: '昵称不能超过30个字符' }),
-  });
+const formSchema = z.object({
+  displayName: z
+    .string()
+    .min(2, { message: '昵称至少需要2个字符' })
+    .max(30, { message: '昵称不能超过30个字符' }),
+});
 
 // Props：initialDisplayName（用户当前的显示名称，可能为 null）
 export default function UpdateDisplayNameForm({
@@ -49,7 +48,7 @@ export default function UpdateDisplayNameForm({
   // 表单提交事件
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     form.clearErrors();
-    
+
     // 检查用户是否已登录
     const {
       data: { user },
@@ -96,7 +95,7 @@ export default function UpdateDisplayNameForm({
 
   return (
     <div className={cn('flex flex-col gap-6', className)}>
-      <Card>
+      <Card className="border sm:border-0">
         <CardHeader>
           <CardTitle className="text-2xl">修改昵称</CardTitle>
           <CardDescription>请输入新昵称</CardDescription>
@@ -111,12 +110,7 @@ export default function UpdateDisplayNameForm({
                   <FormItem>
                     <FormLabel>昵称</FormLabel>
                     <FormControl>
-                      <Input
-                        id="displayName"
-                        type="text"
-                        placeholder="New name"
-                        {...field}
-                      />
+                      <Input id="displayName" type="text" placeholder="新昵称" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

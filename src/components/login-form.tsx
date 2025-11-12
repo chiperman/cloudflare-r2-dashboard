@@ -57,7 +57,7 @@ export function LoginForm({
             <Input
               id="email"
               type="email"
-              placeholder="email@example.com"
+              placeholder="请输入邮箱"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -99,11 +99,7 @@ export function LoginForm({
         </div>
         <div className="mt-4 text-center text-sm">
           还没有账户？{' '}
-          <button
-            type="button"
-            onClick={onSwitchToSignUp}
-            className="underline underline-offset-4"
-          >
+          <button type="button" onClick={onSwitchToSignUp} className="underline underline-offset-4">
             注册
           </button>
         </div>
