@@ -63,7 +63,7 @@ export function SignUpForm({
             <Input
               id="email"
               type="email"
-              placeholder="email@example.com"
+              placeholder="请输入邮箱"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -109,11 +109,7 @@ export function SignUpForm({
                 onClick={() => setShowRepeatPassword(!showRepeatPassword)}
                 className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500"
               >
-                {showRepeatPassword ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
-                )}
+                {showRepeatPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
@@ -124,11 +120,7 @@ export function SignUpForm({
         </div>
         <div className="mt-4 text-center text-sm">
           已经有账户了？{' '}
-          <button
-            type="button"
-            onClick={onSwitchToLogin}
-            className="underline underline-offset-4"
-          >
+          <button type="button" onClick={onSwitchToLogin} className="underline underline-offset-4">
             登录
           </button>
         </div>
