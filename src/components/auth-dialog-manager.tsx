@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 import { LogoutButton } from './logout-button';
 import { useRouter } from 'next/navigation';
 import { ProfileDialog } from './profile-dialog';
+import { useMediaQuery } from '@/lib/hooks/use-media-query';
 
 export function AuthDialogManager() {
   const [user, setUser] = useState<User | null>(null);
@@ -18,6 +19,7 @@ export function AuthDialogManager() {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const supabase = createClient();
   const router = useRouter();
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   useEffect(() => {
     const {
@@ -80,17 +82,20 @@ export function AuthDialogManager() {
         onSwitchToSignUp={switchToSignUp}
         onSwitchToForgotPassword={switchToForgotPassword}
         onLoginSuccess={() => setLoginOpen(false)}
+        isMobile={isMobile}
       />
       <SignUpDialog
         open={signUpOpen}
         onOpenChange={setSignUpOpen}
         onSwitchToLogin={switchToLogin}
         onSignUpSuccess={() => setSignUpOpen(false)}
+        isMobile={isMobile}
       />
       <ForgotPasswordDialog
         open={forgotPasswordOpen}
         onOpenChange={setForgotPasswordOpen}
         onSwitchToLogin={switchToLogin}
+        isMobile={isMobile}
       />
     </>
   );
