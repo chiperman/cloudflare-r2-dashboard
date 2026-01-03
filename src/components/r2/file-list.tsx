@@ -38,16 +38,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/components/ui/drawer';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -197,7 +187,6 @@ export function FileList({
   const [folderNameError, setFolderNameError] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isCreateFolderDrawerOpen, setIsCreateFolderDrawerOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -341,7 +330,6 @@ export function FileList({
       toast({ title: '成功', description: `文件夹 "${newFolderName}" 创建成功。` });
       setNewFolderName('');
       setIsCreateFolderOpen(false);
-      setIsCreateFolderDrawerOpen(false);
       mutate();
     } catch (err) {
       toast({
@@ -625,9 +613,9 @@ export function FileList({
           <div className="hidden sm:block">
             <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="icon" className="sm:w-auto sm:px-4">
+                <Button variant="outline" size="icon" className="w-full sm:w-auto sm:px-4">
                   <FolderPlus className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">新建文件夹</span>
+                  <span className="inline">新建文件夹</span>
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -666,50 +654,6 @@ export function FileList({
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-          <div className="sm:hidden">
-            <Drawer open={isCreateFolderDrawerOpen} onOpenChange={setIsCreateFolderDrawerOpen}>
-              <DrawerTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <FolderPlus className="h-4 w-4" />
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader>
-                  <DrawerTitle>新建文件夹</DrawerTitle>
-                </DrawerHeader>
-                <div className="p-4">
-                  <Input
-                    placeholder="请输入文件夹名称"
-                    value={newFolderName}
-                    onChange={(e) => {
-                      const name = e.target.value;
-                      setNewFolderName(name);
-                      const safeNameRegex = /^[a-zA-Z0-9_-]*$/;
-                      if (!safeNameRegex.test(name)) {
-                        setFolderNameError('名称只能包含字母、数字、- 和 _');
-                      } else {
-                        setFolderNameError('');
-                      }
-                    }}
-                  />
-                  {folderNameError && (
-                    <p className="text-sm text-destructive mt-2">{folderNameError}</p>
-                  )}
-                </div>
-                <DrawerFooter>
-                  <DrawerClose asChild>
-                    <Button variant="outline">取消</Button>
-                  </DrawerClose>
-                  <Button
-                    onClick={handleCreateFolder}
-                    disabled={!!folderNameError || !newFolderName}
-                  >
-                    创建
-                  </Button>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer>
           </div>
         </div>
 
@@ -762,21 +706,20 @@ export function FileList({
               </DropdownMenu>
             </div>
             <div className="sm:hidden">
-              <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-                <DrawerTrigger asChild>
+              <Dialog open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                <DialogTrigger asChild>
                   <Button variant="ghost" className="rounded-l-none">
                     <ChevronDown className="h-4 w-4" />
                   </Button>
-                </DrawerTrigger>
-                <DrawerContent>
-                  <DrawerHeader>
-                    <DrawerTitle>搜索范围</DrawerTitle>
-                    <DrawerDescription>选择一个范围进行搜索</DrawerDescription>
-                  </DrawerHeader>
-                  <div className="p-4">
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>搜索范围</DialogTitle>
+                  </DialogHeader>
+                  <div className="p-4 grid grid-cols-1 gap-2">
                     <Button
                       variant={searchScope === 'current' ? 'default' : 'outline'}
-                      className="w-full mb-2"
+                      className="w-full"
                       onClick={() => {
                         setSearchScope('current');
                         setIsDrawerOpen(false);
@@ -795,13 +738,8 @@ export function FileList({
                       全局
                     </Button>
                   </div>
-                  <DrawerFooter>
-                    <DrawerClose asChild>
-                      <Button variant="outline">取消</Button>
-                    </DrawerClose>
-                  </DrawerFooter>
-                </DrawerContent>
-              </Drawer>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
@@ -972,14 +910,14 @@ export function FileList({
                               disabled={
                                 Boolean(
                                   !profile?.role ||
-                                    (profile.role !== 'admin' &&
-                                      (!file.user_id || (user && user.id !== file.user_id)))
+                                  (profile.role !== 'admin' &&
+                                    (!file.user_id || (user && user.id !== file.user_id)))
                                 ) || isDeleting
                               }
                               title={
                                 !profile?.role ||
-                                (profile.role !== 'admin' &&
-                                  (!file.user_id || (user && user.id !== file.user_id)))
+                                  (profile.role !== 'admin' &&
+                                    (!file.user_id || (user && user.id !== file.user_id)))
                                   ? '你没有删除此文件的权限'
                                   : '删除文件'
                               }
@@ -1058,35 +996,30 @@ export function FileList({
               </div>
               {/* Mobile Drawer */}
               <div className="sm:hidden">
-                <Drawer>
-                  <DrawerTrigger asChild>
+                <Dialog>
+                  <DialogTrigger asChild>
                     <Button variant="outline" className="h-8 w-[70px]">
                       {pageSize}
                     </Button>
-                  </DrawerTrigger>
-                  <DrawerContent>
-                    <DrawerHeader>
-                      <DrawerTitle>选择每页行数</DrawerTitle>
-                    </DrawerHeader>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>选择每页行数</DialogTitle>
+                    </DialogHeader>
                     <div className="p-4 grid grid-cols-1 gap-2">
                       {[10, 20, 50].map((size) => (
-                        <DrawerClose asChild key={size}>
+                        <DialogClose asChild key={size}>
                           <Button
                             variant={size === pageSize ? 'default' : 'outline'}
                             onClick={() => handlePageSizeChange(size.toString())}
                           >
                             {size}
                           </Button>
-                        </DrawerClose>
+                        </DialogClose>
                       ))}
                     </div>
-                    <DrawerFooter>
-                      <DrawerClose asChild>
-                        <Button variant="outline">取消</Button>
-                      </DrawerClose>
-                    </DrawerFooter>
-                  </DrawerContent>
-                </Drawer>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
             <div className="text-sm text-muted-foreground">共 {totalCount} 个项目</div>
@@ -1151,20 +1084,20 @@ export function FileList({
                 }}
                 className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
               />
-              <Drawer>
-                <DrawerTrigger asChild>
+              <Dialog>
+                <DialogTrigger asChild>
                   <Button variant="outline">
                     第 {currentPage} / {totalPages} 页
                   </Button>
-                </DrawerTrigger>
-                <DrawerContent>
-                  <DrawerHeader>
-                    <DrawerTitle>跳转到页面</DrawerTitle>
-                  </DrawerHeader>
-                  <ScrollArea className="max-h-[40vh]">
+                </DialogTrigger>
+                <DialogContent className="max-h-[80vh] flex flex-col">
+                  <DialogHeader>
+                    <DialogTitle>跳转到页面</DialogTitle>
+                  </DialogHeader>
+                  <ScrollArea className="flex-1">
                     <div className="p-4 grid grid-cols-1 gap-2">
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <DrawerClose asChild key={page}>
+                        <DialogClose asChild key={page}>
                           <Button
                             variant={page === currentPage ? 'default' : 'outline'}
                             onClick={() => {
@@ -1174,17 +1107,12 @@ export function FileList({
                           >
                             {page}
                           </Button>
-                        </DrawerClose>
+                        </DialogClose>
                       ))}
                     </div>
                   </ScrollArea>
-                  <DrawerFooter>
-                    <DrawerClose asChild>
-                      <Button variant="outline">取消</Button>
-                    </DrawerClose>
-                  </DrawerFooter>
-                </DrawerContent>
-              </Drawer>
+                </DialogContent>
+              </Dialog>
               <PaginationNext
                 onClick={() => {
                   setSelectedKeys(new Set());
@@ -1196,186 +1124,181 @@ export function FileList({
           </div>
         </div>
       </div>
-      {selectedKeys.size > 0 && (
-        <div className="fixed bottom-10 right-10 z-50 flex flex-col gap-2">
-          <Button size="lg" onClick={handleBulkDownload} disabled={isDownloading || isDeleting}>
-            <Download className="h-5 w-5 mr-2" />
-            {isDownloading ? '下载中...' : `下载选中 (${selectedKeys.size})`}
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="lg" disabled={isDeleting || isDownloading}>
-                <Trash2 className="h-5 w-5 mr-2" />
-                {isDeleting ? '删除中...' : `删除选中 (${selectedKeys.size})`}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>确认删除？</AlertDialogTitle>
-                <AlertDialogDescription>
-                  确认删除选中的 {selectedKeys.size} 个文件？此操作不可恢复。
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleBulkDelete}
-                  className="bg-red-500 text-white hover:bg-red-600"
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? 'Deleting...' : 'Delete'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      )}
+      {
+        selectedKeys.size > 0 && (
+          <div className="fixed bottom-10 right-10 z-50 flex flex-col gap-2">
+            <Button size="lg" onClick={handleBulkDownload} disabled={isDownloading || isDeleting}>
+              <Download className="h-5 w-5 mr-2" />
+              {isDownloading ? '下载中...' : `下载选中 (${selectedKeys.size})`}
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="lg" disabled={isDeleting || isDownloading}>
+                  <Trash2 className="h-5 w-5 mr-2" />
+                  {isDeleting ? '删除中...' : `删除选中 (${selectedKeys.size})`}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>确认删除？</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    确认删除选中的 {selectedKeys.size} 个文件？此操作不可恢复。
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>取消</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleBulkDelete}
+                    className="bg-red-500 text-white hover:bg-red-600"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )
+      }
 
       {/* Mobile Action Drawer */}
-      {actionMenuFile && (
-        <Drawer
-          open={!!actionMenuFile}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setActionMenuFile(null);
-              setShowImagePreviewInDrawer(false); // Drawer 关闭时重置预览状态
-            }
-          }}
-        >
-          <DrawerContent>
-            <DrawerHeader>
-              <DrawerTitle>
-                <span className="truncate block max-w-[16rem] mx-auto">{actionMenuFile.key}</span>
-              </DrawerTitle>
-              <DrawerDescription>选择一个操作</DrawerDescription>
-            </DrawerHeader>
-            <ScrollArea className="overflow-y-auto">
-              {actionMenuFile &&
-                /\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) &&
-                showImagePreviewInDrawer && (
-                  <div className="px-4 pt-0 pb-4 flex justify-center items-center">
-                    <div className="relative w-full max-w-xs h-64 rounded-lg overflow-hidden">
-                      {!isImageLoaded && actionMenuFile.blurDataURL && (
-                        <Image
-                          key={actionMenuFile.key + '-blur'}
-                          src={actionMenuFile.blurDataURL}
-                          alt={actionMenuFile.key}
-                          fill
-                          className="object-contain filter blur-lg"
-                        />
-                      )}
-                      {isImageReadyForTransition && (
-                        <Image
-                          key={actionMenuFile.key + '-hd'}
-                          src={actionMenuFile.url}
-                          alt={actionMenuFile.key}
-                          fill
-                          className={`object-contain transition-opacity duration-300 ${
-                            isImageLoaded ? 'opacity-100' : 'opacity-0'
-                          }`}
-                        />
-                      )}
+      {
+        actionMenuFile && (
+          <Dialog
+            open={!!actionMenuFile}
+            onOpenChange={(isOpen) => {
+              if (!isOpen) {
+                setActionMenuFile(null);
+                setShowImagePreviewInDrawer(false);
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>
+                  <span className="truncate block max-w-full">{actionMenuFile.key}</span>
+                </DialogTitle>
+              </DialogHeader>
+              <ScrollArea className="max-h-[70vh]">
+                {actionMenuFile &&
+                  /\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) &&
+                  showImagePreviewInDrawer && (
+                    <div className="px-4 pt-0 pb-4 flex justify-center items-center">
+                      <div className="relative w-full max-w-xs h-64 rounded-lg overflow-hidden">
+                        {!isImageLoaded && actionMenuFile.blurDataURL && (
+                          <Image
+                            key={actionMenuFile.key + '-blur'}
+                            src={actionMenuFile.blurDataURL}
+                            alt={actionMenuFile.key}
+                            fill
+                            className="object-contain filter blur-lg"
+                          />
+                        )}
+                        {isImageReadyForTransition && (
+                          <Image
+                            key={actionMenuFile.key + '-hd'}
+                            src={actionMenuFile.url}
+                            alt={actionMenuFile.key}
+                            fill
+                            className={`object-contain transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                          />
+                        )}
 
-                      {/* 添加上一张/下一张按钮 */}
-                      <Button
-                        variant="ghost"
-                        onClick={handleMobilePrevPreview}
-                        disabled={
-                          currentMobilePreviewIndex === null || currentMobilePreviewIndex <= 0
-                        }
-                        className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
-                      >
-                        <ChevronLeft className="h-8 w-8" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={handleMobileNextPreview}
-                        disabled={
-                          currentMobilePreviewIndex === null ||
-                          currentMobilePreviewIndex >= files.length - 1
-                        }
-                        className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
-                      >
-                        <ChevronRight className="h-8 w-8" />
-                      </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={handleMobilePrevPreview}
+                          disabled={
+                            currentMobilePreviewIndex === null || currentMobilePreviewIndex <= 0
+                          }
+                          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
+                        >
+                          <ChevronLeft className="h-8 w-8" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={handleMobileNextPreview}
+                          disabled={
+                            currentMobilePreviewIndex === null ||
+                            currentMobilePreviewIndex >= files.length - 1
+                          }
+                          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
+                        >
+                          <ChevronRight className="h-8 w-8" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              <div className="p-4 pt-0 grid grid-cols-2 gap-2">
-                <DrawerClose asChild>
-                  <Button variant="outline" asChild>
-                    <a href={actionMenuFile.url} download={actionMenuFile.key}>
-                      <Download className="mr-2 h-4 w-4" />
-                      <span>下载</span>
-                    </a>
-                  </Button>
-                </DrawerClose>
-                {/\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) && (
-                  <DrawerClose asChild>
-                    <Button variant="outline" onClick={() => handleCopyImage(actionMenuFile)}>
-                      <ImageIcon className="mr-2 h-4 w-4" />
-                      <span>复制图片</span>
+                  )}
+                <div className="p-4 pt-0 grid grid-cols-2 gap-2">
+                  <DialogClose asChild>
+                    <Button variant="outline" asChild>
+                      <a href={actionMenuFile.url} download={actionMenuFile.key}>
+                        <Download className="mr-2 h-4 w-4" />
+                        <span>下载</span>
+                      </a>
                     </Button>
-                  </DrawerClose>
-                )}
-                <DrawerClose asChild>
-                  <Button variant="outline" onClick={() => handleCopy(actionMenuFile.url)}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    <span>复制链接</span>
-                  </Button>
-                </DrawerClose>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      disabled={
-                        Boolean(
-                          !profile?.role ||
+                  </DialogClose>
+                  {/\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) && (
+                    <DialogClose asChild>
+                      <Button variant="outline" onClick={() => handleCopyImage(actionMenuFile)}>
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        <span>复制图片</span>
+                      </Button>
+                    </DialogClose>
+                  )}
+                  <DialogClose asChild>
+                    <Button variant="outline" onClick={() => handleCopy(actionMenuFile.url)}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      <span>复制链接</span>
+                    </Button>
+                  </DialogClose>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        disabled={
+                          Boolean(
+                            !profile?.role ||
                             (profile.role !== 'admin' &&
                               (!actionMenuFile.user_id ||
                                 (user && user.id !== actionMenuFile.user_id)))
-                        ) || isDeleting
-                      }
-                      title={
-                        !profile?.role ||
-                        (profile.role !== 'admin' &&
-                          (!actionMenuFile.user_id || (user && user.id !== actionMenuFile.user_id)))
-                          ? '你没有删除此文件的权限'
-                          : '删除文件'
-                      }
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>{isDeleting ? '删除中...' : '删除'}</span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>确认删除？</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        确认删除 {actionMenuFile.key}？此操作不可恢复。
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>取消</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDelete(actionMenuFile.key)}
-                        disabled={isDeleting}
+                          ) || isDeleting
+                        }
+                        title={
+                          !profile?.role ||
+                            (profile.role !== 'admin' &&
+                              (!actionMenuFile.user_id || (user && user.id !== actionMenuFile.user_id)))
+                            ? '你没有删除此文件的权限'
+                            : '删除文件'
+                        }
                       >
-                        {isDeleting ? '删除中...' : '删除'}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </ScrollArea>
-            <DrawerFooter>
-              <DrawerClose asChild>
-                <Button variant="outline">取消</Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
-      )}
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>{isDeleting ? '删除中...' : '删除'}</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>确认删除？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          确认删除 {actionMenuFile.key}？此操作不可恢复。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(actionMenuFile.key)}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? '删除中...' : '删除'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+        )
+      }
 
       {/* Desktop Preview Components */}
       <Dialog open={!!previewFile} onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}>
@@ -1398,8 +1321,8 @@ export function FileList({
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
                 {previewFile.key.toLowerCase().endsWith('.mp4') ||
-                previewFile.key.toLowerCase().endsWith('.webm') ||
-                previewFile.key.toLowerCase().endsWith('.mov') ? (
+                  previewFile.key.toLowerCase().endsWith('.webm') ||
+                  previewFile.key.toLowerCase().endsWith('.mov') ? (
                   <video
                     src={previewFile.url}
                     controls
@@ -1468,14 +1391,14 @@ export function FileList({
                         disabled={
                           Boolean(
                             !profile?.role ||
-                              (profile.role !== 'admin' &&
-                                (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
+                            (profile.role !== 'admin' &&
+                              (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
                           ) || isDeleting
                         }
                         title={
                           !profile?.role ||
-                          (profile.role !== 'admin' &&
-                            (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
+                            (profile.role !== 'admin' &&
+                              (!previewFile.user_id || (user && user.id !== previewFile.user_id)))
                             ? '你没有删除此文件的权限'
                             : '删除文件'
                         }
@@ -1514,7 +1437,7 @@ export function FileList({
           )}
         </DialogContent>
       </Dialog>
-    </TooltipProvider>
+    </TooltipProvider >
   );
 }
 

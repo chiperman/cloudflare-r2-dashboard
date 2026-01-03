@@ -5,14 +5,12 @@ import { ThemeSwitcher } from './theme-switcher';
 import GithubIcon from './icons/github-icon';
 import { Button } from '@/components/ui/button';
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/components/ui/drawer';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { LogoutButton } from './logout-button';
 import { useEffect, useState, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
@@ -39,15 +37,6 @@ export function MobileMenu() {
     };
   }, [supabase.auth, router]);
 
-  useEffect(() => {
-    if (isDrawerOpen) {
-      const timer = setTimeout(() => {
-        hiddenInputRef.current?.focus({ preventScroll: true });
-        hiddenInputRef.current?.blur();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isDrawerOpen]);
 
   const handleLogoutSuccess = () => {
     setIsDrawerOpen(false);
@@ -55,16 +44,16 @@ export function MobileMenu() {
 
   return (
     <div className="md:hidden">
-      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <DrawerTrigger asChild>
+      <Dialog open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <DialogTrigger asChild>
           <Button variant="ghost" size="sm" aria-label="Toggle menu">
             <Menu size={20} />
           </Button>
-        </DrawerTrigger>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>菜单</DrawerTitle>
-          </DrawerHeader>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>菜单</DialogTitle>
+          </DialogHeader>
           <div className="p-4 grid grid-cols-1 gap-3">
             <ThemeSwitcher isMobile={true} />
             <Button asChild variant="outline">
@@ -80,14 +69,8 @@ export function MobileMenu() {
             </Button>
             {user && <LogoutButton onLogoutSuccess={handleLogoutSuccess} />}
           </div>
-          <DrawerFooter>
-            <DrawerClose asChild>
-              <Button variant="outline">关闭</Button>
-            </DrawerClose>
-          </DrawerFooter>
-          <input ref={hiddenInputRef} style={{ position: 'absolute', left: '-9999px' }} readOnly />
-        </DrawerContent>
-      </Drawer>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
