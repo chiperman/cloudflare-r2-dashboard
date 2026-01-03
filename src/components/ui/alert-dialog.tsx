@@ -38,9 +38,9 @@ const AlertDialogContent = React.forwardRef<
       className={cn(
         "fixed z-50 grid w-full gap-4 border bg-background p-6 shadow-2xl duration-200",
         // Mobile: Floating Sheet style
-        "bottom-4 left-[50%] top-auto max-w-[95vw] translate-x-[-50%] translate-y-0 rounded-[28px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2",
+        "bottom-4 inset-x-0 mx-auto top-auto max-w-[95vw] rounded-[28px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-bottom-full data-[state=open]:slide-in-from-bottom-full duration-300",
         // Desktop: Standard centered dialog
-        "sm:bottom-auto sm:top-[50%] sm:max-w-lg sm:translate-y-[-50%] sm:rounded-2xl sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-top-[48%]",
+        "sm:left-[50%] sm:bottom-auto sm:top-[50%] sm:max-w-lg sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-2xl sm:data-[state=closed]:slide-out-to-top-[48%] sm:data-[state=open]:slide-in-from-top-[48%] sm:data-[state=closed]:slide-out-to-left-1/2 sm:data-[state=open]:slide-in-from-left-1/2",
         className
       )}
       {...props}
