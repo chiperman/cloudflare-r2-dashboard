@@ -87,7 +87,8 @@ import {
 } from '@/components/ui/breadcrumb';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatBytes } from '@/lib/utils';
+import { formatBytes, cn } from '@/lib/utils';
+import { ImagePreview } from './image-preview';
 
 import type { User } from '@supabase/supabase-js';
 import { R2File } from '@/lib/types';
@@ -189,45 +190,12 @@ export function FileList({
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const [isImageReadyForTransition, setIsImageReadyForTransition] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const [currentMobilePreviewIndex, setCurrentMobilePreviewIndex] = useState<number | null>(null);
   const [showImagePreviewInDrawer, setShowImagePreviewInDrawer] = useState(false);
 
-  const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null);
   const [actionMenuFile, setActionMenuFile] = useState<R2File | null>(null);
-
-  useEffect(() => {
-    setIsImageLoaded(false);
-    setIsImageReadyForTransition(false);
-  }, [previewFile, actionMenuFile]);
-
-  useEffect(() => {
-    let delayTimer: NodeJS.Timeout;
-    let readyTimer: NodeJS.Timeout;
-
-    if (actionMenuFile) {
-      // 确保组件有时间渲染 opacity:0 状态
-      readyTimer = setTimeout(() => {
-        setIsImageReadyForTransition(true);
-        // 引入用户指定的延迟
-        delayTimer = setTimeout(() => {
-          setIsImageLoaded(true);
-        }, 300); // 300毫秒延迟
-      }, 10); // 极短的延迟，确保渲染完成
-    }
-
-    return () => {
-      clearTimeout(delayTimer);
-      clearTimeout(readyTimer);
-    };
-  }, [actionMenuFile]);
-
-  useEffect(() => {
-    setIsImageLoaded(false);
-  }, [previewFile]);
 
   const handleOpenPreview = (file: R2File, index: number) => {
     if (isMobile) {
@@ -1185,24 +1153,12 @@ export function FileList({
                   showImagePreviewInDrawer && (
                     <div className="px-4 pt-0 pb-6 flex justify-center items-center">
                       <div className="relative w-full max-w-sm h-80 rounded-2xl overflow-hidden shadow-lg border">
-                        {!isImageLoaded && actionMenuFile.blurDataURL && (
-                          <Image
-                            key={actionMenuFile.key + '-blur'}
-                            src={actionMenuFile.blurDataURL}
-                            alt={actionMenuFile.key}
-                            fill
-                            className="object-contain filter blur-lg"
-                          />
-                        )}
-                        {isImageReadyForTransition && (
-                          <Image
-                            key={actionMenuFile.key + '-hd'}
-                            src={actionMenuFile.url}
-                            alt={actionMenuFile.key}
-                            fill
-                            className={`object-contain transition-opacity duration-300 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                          />
-                        )}
+                        <ImagePreview
+                          key={actionMenuFile.url}
+                          file={actionMenuFile}
+                          priority
+                          className="w-full h-full"
+                        />
 
                         <Button
                           variant="ghost"
@@ -1302,7 +1258,7 @@ export function FileList({
 
       {/* Desktop Preview Components */}
       <Dialog open={!!previewFile} onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}>
-        <DialogContent className="max-w-4xl h-auto">
+        <DialogContent className="sm:max-w-4xl h-auto">
           {previewFile && (
             <>
               <DialogHeader>
@@ -1316,52 +1272,26 @@ export function FileList({
                   size="icon"
                   onClick={handlePrevPreview}
                   disabled={previewIndex === 0}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-10"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20"
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </Button>
-                {previewFile.key.toLowerCase().endsWith('.mp4') ||
-                  previewFile.key.toLowerCase().endsWith('.webm') ||
-                  previewFile.key.toLowerCase().endsWith('.mov') ? (
-                  <video
-                    src={previewFile.url}
-                    controls
-                    autoPlay
-                    className="w-full h-full object-contain"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                ) : (
-                  <div
-                    className="relative w-full h-full max-w-[70vh] max-h-[70vh] overflow-hidden"
-                    style={{
-                      backgroundImage:
-                        !isImageLoaded && previewFile.blurDataURL
-                          ? `url(${previewFile.blurDataURL})`
-                          : 'none',
-                      backgroundSize: 'contain',
-                      backgroundPosition: 'center',
-                      backgroundRepeat: 'no-repeat',
-                    }}
-                  >
-                    <Image
-                      key={previewFile.key}
-                      src={previewFile.url}
-                      alt={previewFile.key}
-                      fill
-                      className="object-contain"
-                      onLoad={() => {
-                        setTimeout(() => setIsImageLoaded(true), 5000);
-                      }}
-                    />
-                  </div>
-                )}
+
+                <div className="w-full h-full max-w-[70vh] max-h-[70vh]">
+                  <ImagePreview
+                    key={previewFile.url}
+                    file={previewFile}
+                    priority
+                    className="w-full h-full"
+                  />
+                </div>
+
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleNextPreview}
                   disabled={previewIndex === files.length - 1}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-10"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20"
                 >
                   <ChevronRight className="h-6 w-6" />
                 </Button>
