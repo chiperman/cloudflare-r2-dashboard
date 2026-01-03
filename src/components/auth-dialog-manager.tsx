@@ -5,37 +5,24 @@ import { LoginDialog } from '@/components/login-dialog';
 import { SignUpDialog } from '@/components/sign-up-dialog';
 import { ForgotPasswordDialog } from '@/components/forgot-password-dialog';
 import { Button } from '@/components/ui/button';
-import type { User } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
 import { LogoutButton } from './logout-button';
-import { useRouter } from 'next/navigation';
 import { ProfileDialog } from './profile-dialog';
 import { useMediaQuery } from '@/lib/hooks/use-media-query';
+import { useRecoveryMode } from '@/lib/hooks/use-recovery-mode';
+import { useRouter } from 'next/navigation';
 
 export function AuthDialogManager() {
-  const [user, setUser] = useState<User | null>(null);
+  const { isRecoveryMode, user } = useRecoveryMode();
   const [loginOpen, setLoginOpen] = useState(false);
   const [signUpOpen, setSignUpOpen] = useState(false);
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
-  const supabase = createClient();
   const router = useRouter();
   const isMobile = useMediaQuery('(max-width: 767px)');
 
+  // Refresh router when user state changes to ensure server components update
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        router.push('/auth/reset-password');
-      }
-      setUser(session?.user ?? null);
-      router.refresh();
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase.auth, router]);
+    router.refresh();
+  }, [user, router]);
 
   const switchToLogin = () => {
     setSignUpOpen(false);
@@ -54,6 +41,17 @@ export function AuthDialogManager() {
   };
 
   if (user) {
+    if (isRecoveryMode) {
+      return (
+        <div className="flex items-center gap-4">
+          {user.user_metadata.display_name || user.email}
+          <div className="hidden md:flex">
+            <LogoutButton />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center gap-4">
         {user.user_metadata.display_name || user.email}
