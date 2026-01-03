@@ -6,12 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
 import { SignUpForm } from '@/components/sign-up-form';
 
 interface SignUpDialogProps {
@@ -40,19 +34,6 @@ export function SignUpDialog({
       onSwitchToLogin={onSwitchToLogin}
     />
   );
-
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader className="text-left">
-            <DrawerTitle>注册</DrawerTitle>
-          </DrawerHeader>
-          <div className="p-4">{form}</div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

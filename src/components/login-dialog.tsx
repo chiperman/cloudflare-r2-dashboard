@@ -6,12 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
 import { LoginForm } from '@/components/login-form';
 
 interface LoginDialogProps {
@@ -43,19 +37,6 @@ export function LoginDialog({
       onSwitchToForgotPassword={onSwitchToForgotPassword}
     />
   );
-
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader className="text-left">
-            <DrawerTitle>登录</DrawerTitle>
-          </DrawerHeader>
-          <div className="p-4">{form}</div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -6,12 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
 import { ForgotPasswordForm } from '@/components/forgot-password-form';
 
 interface ForgotPasswordDialogProps {
@@ -28,19 +22,6 @@ export function ForgotPasswordDialog({
   isMobile,
 }: ForgotPasswordDialogProps) {
   const form = <ForgotPasswordForm onSwitchToLogin={onSwitchToLogin} />;
-
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
-          <DrawerHeader className="text-left">
-            <DrawerTitle>忘记密码</DrawerTitle>
-          </DrawerHeader>
-          <div className="p-4">{form}</div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
