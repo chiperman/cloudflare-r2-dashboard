@@ -1183,8 +1183,8 @@ export function FileList({
                 {actionMenuFile &&
                   /\.(jpe?g|png|gif|webp|bmp)$/i.test(actionMenuFile.key) &&
                   showImagePreviewInDrawer && (
-                    <div className="px-4 pt-0 pb-4 flex justify-center items-center">
-                      <div className="relative w-full max-w-xs h-64 rounded-lg overflow-hidden">
+                    <div className="px-4 pt-0 pb-6 flex justify-center items-center">
+                      <div className="relative w-full max-w-sm h-80 rounded-2xl overflow-hidden shadow-lg border">
                         {!isImageLoaded && actionMenuFile.blurDataURL && (
                           <Image
                             key={actionMenuFile.key + '-blur'}
@@ -1210,9 +1210,9 @@ export function FileList({
                           disabled={
                             currentMobilePreviewIndex === null || currentMobilePreviewIndex <= 0
                           }
-                          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/20 backdrop-blur-md text-white border border-white/20 hover:bg-white/40"
                         >
-                          <ChevronLeft className="h-8 w-8" />
+                          <ChevronLeft className="h-6 w-6" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -1221,9 +1221,9 @@ export function FileList({
                             currentMobilePreviewIndex === null ||
                             currentMobilePreviewIndex >= files.length - 1
                           }
-                          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/30 text-black hover:bg-white/50"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg bg-white/20 backdrop-blur-md text-white border border-white/20 hover:bg-white/40"
                         >
-                          <ChevronRight className="h-8 w-8" />
+                          <ChevronRight className="h-6 w-6" />
                         </Button>
                       </div>
                     </div>

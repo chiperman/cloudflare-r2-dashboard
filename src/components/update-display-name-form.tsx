@@ -95,8 +95,8 @@ export default function UpdateDisplayNameForm({
 
   return (
     <div className={cn('flex flex-col gap-6', className)}>
-      <Card className="border sm:border-0">
-        <CardHeader>
+      <Card className="border-0 sm:border">
+        <CardHeader className="hidden sm:block">
           <CardTitle className="text-2xl">修改昵称</CardTitle>
           <CardDescription>请输入新昵称</CardDescription>
         </CardHeader>
