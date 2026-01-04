@@ -9,6 +9,14 @@ const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
   title: 'Cloudflare R2 Dashboard',
@@ -25,13 +33,6 @@ export const metadata: Metadata = {
       { url: '/favico-256x256.png?v=1', sizes: '256x256', type: 'image/png' },
     ],
     apple: '/favico-256x256.png?v=1', // Using 256x256 as a high-res fallback for apple-touch-icon
-  },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: 'cover',
   },
 };
 
