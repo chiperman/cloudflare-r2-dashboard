@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import ProfileSettings from '@/components/profile-settings';
+import ProfileSettings from './profile-settings';
 import type { User } from '@supabase/supabase-js';
 
 interface ProfileDialogProps {

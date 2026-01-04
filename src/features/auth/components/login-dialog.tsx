@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { LoginForm } from '@/components/login-form';
+import { LoginForm } from './login-form';
 
 interface LoginDialogProps {
   open: boolean;
