@@ -1,4 +1,4 @@
-import ProfileSettings from '@/components/profile-settings';
+import ProfileSettings from '@/features/auth/components/profile-settings';
 import { createServerClient, CookieOptions, CookieMethodsServer } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LoginDialog } from '@/components/login-dialog';
-import { SignUpDialog } from '@/components/sign-up-dialog';
-import { ForgotPasswordDialog } from '@/components/forgot-password-dialog';
+import { LoginDialog } from './login-dialog';
+import { SignUpDialog } from './sign-up-dialog';
+import { ForgotPasswordDialog } from './forgot-password-dialog';
 import { Button } from '@/components/ui/button';
 import { LogoutButton } from './logout-button';
 import { ProfileDialog } from './profile-dialog';

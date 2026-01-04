@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ThemeSwitcher } from './theme-switcher';
 import GithubIcon from './icons/github-icon';
-import { AuthButton } from './auth-button';
+import { AuthButton } from '@/features/auth/components/auth-button';
 import { hasEnvVars } from '@/lib/utils';
 import { EnvVarWarning } from "./env-var-warning";
 import { Button } from "@/components/ui/button";

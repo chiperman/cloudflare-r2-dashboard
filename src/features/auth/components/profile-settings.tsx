@@ -1,7 +1,7 @@
 'use client';
 
-import UpdatePasswordForm from '@/components/update-password-form';
-import UpdateDisplayNameForm from '@/components/update-display-name-form';
+import UpdatePasswordForm from './update-password-form';
+import UpdateDisplayNameForm from './update-display-name-form';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { User } from '@supabase/supabase-js';
@@ -12,7 +12,7 @@ interface ProfileSettingsProps {
 
 export default function ProfileSettings({ user }: ProfileSettingsProps) {
   return (
-        <Tabs defaultValue="account" className="w-full">
+    <Tabs defaultValue="account" className="w-full">
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="account">账户</TabsTrigger>
         <TabsTrigger value="password">密码</TabsTrigger>
