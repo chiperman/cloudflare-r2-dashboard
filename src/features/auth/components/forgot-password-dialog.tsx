@@ -6,40 +6,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { SignUpForm } from '@/components/sign-up-form';
+import { ForgotPasswordForm } from './forgot-password-form';
 
-interface SignUpDialogProps {
+interface ForgotPasswordDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSwitchToLogin: () => void;
-  onSignUpSuccess?: () => void;
   isMobile?: boolean;
 }
 
-export function SignUpDialog({
+export function ForgotPasswordDialog({
   open,
   onOpenChange,
   onSwitchToLogin,
-  onSignUpSuccess,
   isMobile,
-}: SignUpDialogProps) {
-  const handleSignUpSuccess = () => {
-    onOpenChange(false);
-    onSignUpSuccess?.();
-  };
-
-  const form = (
-    <SignUpForm
-      onSignUpSuccess={handleSignUpSuccess}
-      onSwitchToLogin={onSwitchToLogin}
-    />
-  );
+}: ForgotPasswordDialogProps) {
+  const form = <ForgotPasswordForm onSwitchToLogin={onSwitchToLogin} />;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>注册</DialogTitle>
+          <DialogTitle>忘记密码</DialogTitle>
         </DialogHeader>
         {form}
       </DialogContent>

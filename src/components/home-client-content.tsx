@@ -5,13 +5,14 @@ import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import type { R2File } from '@/lib/types';
 
-import { FileList, FileListSkeleton } from '@/components/r2/file-list';
-import { UploadFormSkeleton } from '@/components/r2/upload-form';
-import { R2Metrics } from '@/components/r2/r2-metrics';
+import { FileList } from '@/features/r2/components/file-list';
+import { FileListSkeleton } from '@/features/r2/components/file-list-skeleton';
+import { UploadFormSkeleton } from '@/features/r2/components/upload-form-skeleton';
+import { R2Metrics } from '@/features/r2/components/r2-metrics';
 import dynamic from 'next/dynamic';
 
 const DynamicUploadForm = dynamic(
-  () => import('@/components/r2/upload-form').then((mod) => mod.UploadForm),
+  () => import('@/features/r2/components/upload-form').then((mod) => mod.UploadForm),
   {
     ssr: false,
     loading: () => <UploadFormSkeleton />,

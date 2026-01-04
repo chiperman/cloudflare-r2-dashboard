@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { LogoutButton } from './logout-button';
+import { LogoutButton } from '@/features/auth/components/logout-button';
 import { useEffect, useState, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
