@@ -43,6 +43,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
+    // 服务端文件大小校验：30MB，与前端限制保持一致
+    const MAX_FILE_SIZE = 30 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: '文件大小超过 30MB 限制' }, { status: 400 });
+    }
+
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const contentType = file.type;
     const now = new Date(); // Get current time for uploadedAt and filename generation
