@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { R2File } from '../types';
 
@@ -21,7 +21,7 @@ interface UseFileListProps {
     pageSize: number;
     debouncedSearchTerm: string;
     searchScope: string;
-    newlyUploadedFiles: R2File[];
+    uploadVersion: number;
 }
 
 export function useFileList({
@@ -29,7 +29,7 @@ export function useFileList({
     pageSize,
     debouncedSearchTerm,
     searchScope,
-    newlyUploadedFiles,
+    uploadVersion,
 }: UseFileListProps) {
     const [currentPage, setCurrentPage] = useState(1);
     const isSearching = debouncedSearchTerm.length > 0;
@@ -44,23 +44,31 @@ export function useFileList({
 
     const { data, error, isLoading, mutate } = useSWR<FileListResponse>(swrKey, fetcher);
 
-    const files = useMemo(() => data?.files || [], [data]);
-    const directories = useMemo(() => data?.directories || [], [data]);
+    const files = data?.files || [];
+    const directories = data?.directories || [];
     const hasMore = data?.isTruncated || false;
     const totalCount = data?.totalCount || 0;
     const totalPages = data?.totalPages || 1;
 
     // Jump to page 1 and refresh when new files are uploaded
     useEffect(() => {
-        if (newlyUploadedFiles.length > 0) {
-            setCurrentPage(1);
-            mutate();
+        if (uploadVersion > 0) {
+            const timer = window.setTimeout(() => {
+                setCurrentPage(1);
+                void mutate();
+            }, 0);
+
+            return () => window.clearTimeout(timer);
         }
-    }, [newlyUploadedFiles, mutate]);
+    }, [uploadVersion, mutate]);
 
     // Reset to page 1 when folder or page size changes
     useEffect(() => {
-        setCurrentPage(1);
+        const timer = window.setTimeout(() => {
+            setCurrentPage(1);
+        }, 0);
+
+        return () => window.clearTimeout(timer);
     }, [currentPrefix, pageSize]);
 
     const handleNextPage = () => {

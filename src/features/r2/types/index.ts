@@ -1,5 +1,6 @@
 export interface R2File {
   key: string;
+  name?: string;
   url: string;
   size: number;
   uploadedAt: string;
@@ -7,6 +8,12 @@ export interface R2File {
   thumbnailUrl: string;
   blurDataURL?: string;
   user_id?: string;
+}
+
+export interface UploadedByUser {
+  id: string;
+  email?: string | null;
+  display_name?: string | null;
 }
 
 export interface UploadableFile {

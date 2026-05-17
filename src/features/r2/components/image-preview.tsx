@@ -18,15 +18,20 @@ export function ImagePreview({ file, priority = false, className }: ImagePreview
 
     // 当文件改变时，重置所有状态
     useEffect(() => {
-        setIsLoaded(false);
-        setIsVisible(false);
+        const resetTimer = window.setTimeout(() => {
+            setIsLoaded(false);
+            setIsVisible(false);
+        }, 0);
 
         // 确保在下一帧开始动画，防止闪烁
-        const timer = setTimeout(() => {
+        const timer = window.setTimeout(() => {
             setIsVisible(true);
         }, 10);
 
-        return () => clearTimeout(timer);
+        return () => {
+            window.clearTimeout(resetTimer);
+            window.clearTimeout(timer);
+        };
     }, [file.key, file.url]);
 
     if (isVideo) {
