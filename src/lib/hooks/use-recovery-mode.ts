@@ -5,9 +5,10 @@ import { Session, User } from '@supabase/supabase-js';
 export function useRecoveryMode() {
     const [isRecoveryMode, setIsRecoveryMode] = useState(false);
     const [user, setUser] = useState<User | null>(null);
-    const supabase = createClient();
 
     useEffect(() => {
+        const supabase = createClient();
+
         const checkRecovery = (session: Session | null) => {
             const currentUser = session?.user ?? null;
             setUser(currentUser);
@@ -48,7 +49,7 @@ export function useRecoveryMode() {
         return () => {
             subscription.unsubscribe();
         };
-    }, [supabase.auth]);
+    }, []);
 
     return { isRecoveryMode, user };
 }

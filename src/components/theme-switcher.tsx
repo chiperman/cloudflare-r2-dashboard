@@ -23,7 +23,11 @@ const ThemeSwitcher = ({ isMobile = false }: { isMobile?: boolean }) => {
 
   // useEffect only runs on the client, so now we can safely show the UI
   useEffect(() => {
-    setMounted(true);
+    const timer = window.setTimeout(() => {
+      setMounted(true);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   if (!mounted) {

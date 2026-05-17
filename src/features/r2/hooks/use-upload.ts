@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { R2File, UploadableFile } from '../types';
 import { useMediaConversion } from './use-media-conversion';
@@ -109,7 +109,10 @@ export function useUpload({
                 }
             };
 
-            xhr.onerror = () => reject(new Error('网络错误'));
+            xhr.onerror = () => {
+                setFiles(prev => prev.map(f => f.id === uploadable.id ? { ...f, status: 'error', error: '网络错误' } : f));
+                reject(new Error('网络错误'));
+            };
             xhr.open('POST', '/api/upload', true);
             xhr.send(formData);
         });
