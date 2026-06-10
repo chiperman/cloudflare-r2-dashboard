@@ -1,14 +1,4 @@
-export interface R2File {
-  key: string;
-  name?: string;
-  url: string;
-  size: number;
-  uploadedAt: string;
-  uploader: string;
-  thumbnailUrl: string;
-  blurDataURL?: string;
-  user_id?: string;
-}
+export type { R2File } from '@/lib/types';
 
 export interface UploadedByUser {
   id: string;
