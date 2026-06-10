@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       key: originalKey,
       name: newFileName,
       uploaded_at: now.toISOString(),
-      size: file.size,
+      size: fileBuffer.length,
       content_type: contentType,
       user_id: user.id,
       blur_data_url: blurDataURL,
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     const newFile: R2File = {
       key: originalKey,
       name: newFileName,
-      size: file.size,
+      size: fileBuffer.length,
       uploadedAt: now.toISOString(),
       url: getR2PublicUrl(originalKey),
       thumbnailUrl: thumbnailUrl,
