@@ -19,11 +19,13 @@ export function ClickableTooltip({ children, content, delay = 2000 }: ClickableT
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Check for touch device only on the client side
-    setIsTouchDevice(window.navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
+    const timer = window.setTimeout(() => {
+      setIsTouchDevice(window.navigator.maxTouchPoints > 0 || 'ontouchstart' in window);
+    }, 0);
 
     // Cleanup timer on unmount
     return () => {
+      window.clearTimeout(timer);
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }

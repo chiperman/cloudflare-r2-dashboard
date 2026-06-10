@@ -2,35 +2,33 @@
 
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+import { getApiErrorMessage } from '@/lib/api';
 import { R2File } from '../types';
 import { downloadFile } from '../utils/r2-utils';
 
 interface UseR2ActionsProps {
     mutate: () => void;
-    currentPrefix: string;
 }
 
-export function useR2Actions({ mutate, currentPrefix }: UseR2ActionsProps) {
+export function useR2Actions({ mutate }: UseR2ActionsProps) {
     const { toast } = useToast();
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
-    const handleDelete = async (fileKey: string, thumbnailUrl?: string) => {
+    const handleDelete = async (file: R2File) => {
         setIsDeleting(true);
         try {
-            const fullKey = `${currentPrefix}${fileKey}`;
             const response = await fetch(`/api/files`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    files: [{ key: fullKey, thumbnailUrl }],
+                    files: [{ key: file.key, thumbnailUrl: file.thumbnailUrl }],
                 }),
             });
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || '删除文件失败。');
+                throw new Error(await getApiErrorMessage(response, '删除文件失败。'));
             }
-            toast({ title: '已删除', description: `${fileKey} 已被删除。` });
+            toast({ title: '已删除', description: `${file.name ?? file.key.split('/').pop() ?? file.key} 已被删除。` });
             mutate();
         } catch (err) {
             toast({
@@ -47,7 +45,7 @@ export function useR2Actions({ mutate, currentPrefix }: UseR2ActionsProps) {
         if (selectedFiles.length === 0) return;
 
         const filesPayload = selectedFiles.map((f) => ({
-            key: `${currentPrefix}${f.key}`,
+            key: f.key,
             thumbnailUrl: f.thumbnailUrl,
         }));
 
@@ -60,8 +58,7 @@ export function useR2Actions({ mutate, currentPrefix }: UseR2ActionsProps) {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || '批量删除失败。');
+                throw new Error(await getApiErrorMessage(response, '批量删除失败。'));
             }
 
             toast({

@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { getApiErrorMessage } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -29,11 +30,12 @@ import { FileToolbar } from './file-toolbar';
 import { PaginationManager } from './pagination-manager';
 import { ImagePreview } from './image-preview';
 import { FileListSkeleton } from './file-list-skeleton';
+import { UserProfileSummary } from '@/lib/types';
 
 interface FileListProps {
-    user: any;
-    profile: any;
-    newlyUploadedFiles: R2File[];
+    user: { id: string } | null;
+    profile: UserProfileSummary | null;
+    uploadVersion: number;
     currentPrefix: string;
     setCurrentPrefix: (prefix: string) => void;
 }
@@ -41,7 +43,7 @@ interface FileListProps {
 export function FileList({
     user,
     profile,
-    newlyUploadedFiles,
+    uploadVersion,
     currentPrefix,
     setCurrentPrefix,
 }: FileListProps) {
@@ -69,7 +71,7 @@ export function FileList({
         pageSize,
         debouncedSearchTerm,
         searchScope,
-        newlyUploadedFiles,
+        uploadVersion,
     });
 
     const {
@@ -79,18 +81,20 @@ export function FileList({
         handleBulkDelete,
         handleBulkDownload,
         handleCopyImage,
-    } = useR2Actions({ mutate, currentPrefix });
+    } = useR2Actions({ mutate });
 
     const [previewFile, setPreviewFile] = useState<R2File | null>(null);
     const [previewIndex, setPreviewIndex] = useState<number | null>(null);
     const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
     const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
-    const [folderNameError, setFolderNameError] = useState('');
     const [actionMenuFile, setActionMenuFile] = useState<R2File | null>(null);
-    const [showImagePreviewInDrawer, setShowImagePreviewInDrawer] = useState(false);
 
     const breadcrumbParts = useMemo(() => currentPrefix.split('/').filter((p) => p), [currentPrefix]);
+    const selectedFiles = useMemo(
+        () => files.filter((file) => selectedKeys.has(file.key)),
+        [files, selectedKeys]
+    );
 
     const handleOpenPreview = (file: R2File, index: number) => {
         setPreviewFile(file);
@@ -134,7 +138,9 @@ export function FileList({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ folderName: newFolderName, currentPrefix }),
             });
-            if (!response.ok) throw new Error('创建文件夹失败');
+            if (!response.ok) {
+                throw new Error(await getApiErrorMessage(response, '创建文件夹失败'));
+            }
             toast({ title: '成功', description: `文件夹 "${newFolderName}" 创建成功` });
             setNewFolderName('');
             setIsCreateFolderOpen(false);
@@ -151,7 +157,9 @@ export function FileList({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ prefix: `${currentPrefix}${folderName}/` }),
             });
-            if (!response.ok) throw new Error('删除失败');
+            if (!response.ok) {
+                throw new Error(await getApiErrorMessage(response, '删除失败'));
+            }
             toast({ title: '成功', description: '文件夹已删除' });
             mutate();
         } catch (err) {
@@ -201,10 +209,8 @@ export function FileList({
                 setIsCreateFolderOpen={setIsCreateFolderOpen}
                 newFolderName={newFolderName}
                 setNewFolderName={setNewFolderName}
-                folderNameError={folderNameError}
+                folderNameError=""
                 onCreateFolder={handleCreateFolder}
-                isDrawerOpen={false} // Handle separately if needed
-                setIsDrawerOpen={() => { }}
             />
 
             <FileTable
@@ -217,10 +223,15 @@ export function FileList({
                 onDirectoryClick={(dir) => setCurrentPrefix(`${currentPrefix}${dir}/`)}
                 onDeleteFolder={handleDeleteFolder}
                 onOpenPreview={handleOpenPreview}
-                onCopyFilename={(name) => { copyToClipboard(name); toast({ title: '已复制文件名' }); }}
+                onCopyFilename={(name) => { void copyToClipboard(name); toast({ title: '已复制文件名' }); }}
                 onCopyImage={handleCopyImage}
                 onCopyLink={handleCopyLink}
-                onDeleteFile={(key) => handleDelete(key)}
+                onDeleteFile={(key) => {
+                    const file = files.find((item) => item.key === key);
+                    if (file) {
+                        void handleDelete(file);
+                    }
+                }}
                 isDeleting={isDeleting}
                 user={user}
                 profile={profile}
@@ -293,7 +304,7 @@ export function FileList({
                                     <a href={actionMenuFile.url} download={actionMenuFile.key}><Download className="w-4 h-4 mr-2" />下载</a>
                                 </Button>
                                 <Button variant="outline" onClick={() => handleCopyLink(actionMenuFile.url)} className="w-full"><Copy className="w-4 h-4 mr-2" />链接</Button>
-                                <Button variant="destructive" onClick={() => handleDelete(actionMenuFile.key)} disabled={isDeleting} className="w-full col-span-2">
+                                <Button variant="destructive" onClick={() => void handleDelete(actionMenuFile)} disabled={isDeleting} className="w-full col-span-2">
                                     <Trash2 className="w-4 h-4 mr-2" /> {isDeleting ? '正在删除...' : '删除文件'}
                                 </Button>
                             </div>
@@ -306,10 +317,10 @@ export function FileList({
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-background/80 backdrop-blur-md border px-6 py-3 rounded-full shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
                     <span className="text-sm font-medium">已选中 {selectedKeys.size} 个项</span>
                     <div className="h-4 w-px bg-border" />
-                    <Button size="sm" variant="outline" onClick={() => handleBulkDownload(files.filter(f => selectedKeys.has(f.key)))} disabled={isDownloading}>
+                    <Button size="sm" variant="outline" onClick={() => handleBulkDownload(selectedFiles)} disabled={isDownloading}>
                         下载
                     </Button>
-                    <Button size="sm" variant="destructive" onClick={() => handleBulkDelete(files.filter(f => selectedKeys.has(f.key)))} disabled={isDeleting}>
+                    <Button size="sm" variant="destructive" onClick={() => handleBulkDelete(selectedFiles)} disabled={isDeleting}>
                         删除
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setSelectedKeys(new Set())}>取消</Button>

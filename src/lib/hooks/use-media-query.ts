@@ -21,7 +21,9 @@ export function useMediaQuery(query: string): boolean {
   useEffect(() => {
     // Check on initial mount
     const mediaQueryList = window.matchMedia(query);
-    setValue(mediaQueryList.matches);
+    const timer = window.setTimeout(() => {
+      setValue(mediaQueryList.matches);
+    }, 0);
 
     // Define the listener function
     const handleChange = (event: MediaQueryListEvent) => {
@@ -33,6 +35,7 @@ export function useMediaQuery(query: string): boolean {
 
     // Cleanup listener on unmount
     return () => {
+      window.clearTimeout(timer);
       mediaQueryList.removeEventListener('change', handleChange);
     };
   }, [query]);

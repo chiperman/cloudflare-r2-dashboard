@@ -43,6 +43,7 @@ import {
 import { ClickableTooltip } from '@/components/ui/clickable-tooltip';
 import { formatBytes } from '../utils/r2-utils';
 import { R2File } from '../types';
+import { UserProfileSummary } from '@/lib/types';
 
 interface FileTableProps {
     files: R2File[];
@@ -59,8 +60,8 @@ interface FileTableProps {
     onCopyLink: (url: string) => void;
     onDeleteFile: (key: string) => void;
     isDeleting: boolean;
-    user: any;
-    profile: any;
+    user: { id: string } | null;
+    profile: UserProfileSummary | null;
     setActionMenuFile: (file: R2File | null) => void;
 }
 
@@ -171,12 +172,12 @@ export function FileTable({
                                 </div>
                             </TableCell>
                             <TableCell className="text-center">
-                                <ClickableTooltip content={file.key}>
+                                <ClickableTooltip content={file.name ?? file.key}>
                                     <span
                                         className="block truncate max-w-[150px] mx-auto cursor-pointer hover:underline underline-offset-4"
-                                        onClick={() => onCopyFilename(file.key)}
+                                        onClick={() => onCopyFilename(file.name ?? file.key)}
                                     >
-                                        {file.key}
+                                        {file.name ?? file.key}
                                     </span>
                                 </ClickableTooltip>
                             </TableCell>
@@ -239,7 +240,7 @@ export function FileTable({
                                                     <AlertDialogContent>
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>确认删除？</AlertDialogTitle>
-                                                            <AlertDialogDescription>确认删除 {file.key}？此操作不可恢复。</AlertDialogDescription>
+                                                            <AlertDialogDescription>确认删除 {file.name ?? file.key}？此操作不可恢复。</AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>取消</AlertDialogCancel>

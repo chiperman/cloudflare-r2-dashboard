@@ -1,11 +1,19 @@
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getS3Client } from '@/lib/r2';
+import { getR2PublicUrl, getThumbnailUrl } from '@/lib/r2-file';
+import type { R2File } from '@/lib/types';
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { nanoid } from 'nanoid';
 import { getPlaiceholder } from "plaiceholder";
+import { z } from 'zod';
 
 import { createServerClient } from '@supabase/ssr';
+
+const uploadDirectorySchema = z
+  .string()
+  .regex(/^([A-Za-z0-9._-]+\/)*$/, 'Invalid directory path')
+  .or(z.literal(''));
 
 // Helper function to upload a buffer to R2
 async function uploadToR2(buffer: Buffer, key: string, contentType: string) {
@@ -37,10 +45,20 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
-    const directory = (formData.get('directory') as string) || '';
+    const directoryResult = uploadDirectorySchema.safeParse(formData.get('directory') ?? '');
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+    if (!directoryResult.success) {
+      return NextResponse.json({ error: '目录参数无效' }, { status: 400 });
+    }
+    const directory = directoryResult.data;
+
+    // 服务端文件大小校验：30MB，与前端限制保持一致
+    const MAX_FILE_SIZE = 30 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: '文件大小超过 30MB 限制' }, { status: 400 });
     }
 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
@@ -55,16 +73,14 @@ export async function POST(request: NextRequest) {
     const sanitizedFileName = fileNameWithoutExt.replace(/[^\p{L}\p{N}_.-]/gu, '_'); // Allow Unicode letters/numbers, underscore, dot, hyphen
 
     const randomId = nanoid(6); // Generate a 6-character random string
-    const newFileName = `${sanitizedFileName}-${randomId}.${fileExtension}`;
-
-    console.log('Generated newFileName:', newFileName);
-    // --- End Filename Generation Logic ---
+    const newFileName = fileExtension
+      ? `${sanitizedFileName}-${randomId}.${fileExtension}`
+      : `${sanitizedFileName}-${randomId}`;
 
     const originalKey = `${directory}${newFileName}`;
-    console.log('OriginalKey for R2 upload:', originalKey);
-    let thumbnailUrl: string;
+    let thumbnailUrl = getThumbnailUrl(newFileName);
     let thumbnailKey: string | null = null;
-    let blurDataURL: string | undefined = undefined;
+    let blurDataURL: string | undefined;
 
     // 根据文件类型选择缩略图
     if (contentType.startsWith('image/')) {
@@ -78,18 +94,10 @@ export async function POST(request: NextRequest) {
 
         thumbnailKey = `thumbnails/${newFileName}`;
         await uploadToR2(thumbnailBuffer, thumbnailKey, `image/jpeg`); // 缩略图统一为jpeg
-        thumbnailUrl = `/api/images/${thumbnailKey}`;
+        thumbnailUrl = getR2PublicUrl(thumbnailKey);
       } catch (sharpError) {
         console.error('Thumbnail generation failed:', sharpError);
-        // 如果缩略图生成失败，使用通用图片图标
-        thumbnailUrl = '/file.svg'; // Fallback to a generic file icon
       }
-    } else if (contentType.startsWith('video/')) {
-      // 对于视频文件，使用视频图标
-      thumbnailUrl = '/video.svg';
-    } else {
-      // 对于其他所有文件，使用通用文件图标
-      thumbnailUrl = '/file.svg';
     }
 
     // 上传原始文件
@@ -100,7 +108,7 @@ export async function POST(request: NextRequest) {
       key: originalKey,
       name: newFileName,
       uploaded_at: now.toISOString(),
-      size: file.size,
+      size: fileBuffer.length,
       content_type: contentType,
       user_id: user.id,
       blur_data_url: blurDataURL,
@@ -117,12 +125,15 @@ export async function POST(request: NextRequest) {
     }
 
     const newFile: R2File = {
-      key: newFileName,
-      size: file.size,
+      key: originalKey,
+      name: newFileName,
+      size: fileBuffer.length,
       uploadedAt: now.toISOString(),
-      url: `/api/images/${originalKey}`,
+      url: getR2PublicUrl(originalKey),
       thumbnailUrl: thumbnailUrl,
       blurDataURL: blurDataURL,
+      uploader: user.email ?? '未知',
+      user_id: user.id,
     };
 
     return NextResponse.json(newFile);
@@ -131,13 +142,4 @@ export async function POST(request: NextRequest) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to upload file';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
-}
-
-interface R2File {
-  key: string;
-  size: number;
-  uploadedAt: string;
-  url: string;
-  thumbnailUrl: string;
-  blurDataURL?: string;
 }

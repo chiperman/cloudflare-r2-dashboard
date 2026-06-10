@@ -1,11 +1,60 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { getS3Client } from '@/lib/r2';
+import {
+  DbFileRecord,
+  DbProfileRecord,
+  deleteFilesPayloadSchema,
+  getR2PublicUrl,
+  getThumbnailUrl,
+} from '@/lib/r2-file';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 
-export const runtime = 'edge';
+function mapFileRecord(file: DbFileRecord, profilesMap: Map<string, DbProfileRecord>) {
+  const profile = file.user_id ? profilesMap.get(file.user_id) : undefined;
+
+  return {
+    key: file.key,
+    name: file.name,
+    size: file.size,
+    uploadedAt: file.uploaded_at,
+    url: getR2PublicUrl(file.key),
+    thumbnailUrl: getThumbnailUrl(file.name),
+    user_id: file.user_id ?? undefined,
+    uploader: profile?.display_name || profile?.email || '未知',
+    blurDataURL: file.blur_data_url ?? undefined,
+  };
+}
+
+async function buildProfilesMap(
+  supabase: ReturnType<typeof createServerClient>,
+  filesData: DbFileRecord[]
+) {
+  const uniqueUserIds = [...new Set(filesData.map((file) => file.user_id).filter(Boolean))] as string[];
+  const profilesMap = new Map<string, DbProfileRecord>();
+
+  if (uniqueUserIds.length === 0) {
+    return profilesMap;
+  }
+
+  const { data: profilesData, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, display_name, email')
+    .in('id', uniqueUserIds);
+
+  if (profilesError) {
+    console.error('Error fetching profiles:', profilesError);
+    return profilesMap;
+  }
+
+  (profilesData as DbProfileRecord[]).forEach((profile) => {
+    profilesMap.set(profile.id, profile);
+  });
+
+  return profilesMap;
+}
 
 export async function GET(request: NextRequest) {
   const supabase = createServerClient(
@@ -53,53 +102,13 @@ export async function GET(request: NextRequest) {
         .range(rangeFrom, rangeTo);
 
       if (filesError) throw filesError;
+      const typedFilesData = (filesData ?? []) as DbFileRecord[];
 
       // When searching, always return an empty directories array
       const directories: string[] = [];
 
-      // --- Post-processing logic for files (same as before) ---
-      const uniqueUserIds = [...new Set(filesData.map((file) => file.user_id).filter(Boolean))];
-      let profilesMap = new Map();
-      if (uniqueUserIds.length > 0) {
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, display_name, email')
-          .in('id', uniqueUserIds);
-
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-        } else {
-          profilesData.forEach((profile) => profilesMap.set(profile.id, profile));
-        }
-      }
-
-      const files = filesData.map((file) => {
-        const fileNameOnly = file.name;
-        const fileExtension = fileNameOnly.split('.').pop()?.toLowerCase();
-        let thumbnailUrl = '/file.svg';
-        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-        const videoExtensions = ['mp4', 'webm', 'mov', 'ogg'];
-
-        if (fileExtension && imageExtensions.includes(fileExtension)) {
-          thumbnailUrl = `/api/images/thumbnails/${fileNameOnly}`;
-        } else if (fileExtension && videoExtensions.includes(fileExtension)) {
-          thumbnailUrl = '/video.svg';
-        }
-
-        const profile = profilesMap.get(file.user_id);
-        const uploader = profile?.display_name || profile?.email || '未知';
-
-        return {
-          key: file.name,
-          size: file.size,
-          uploadedAt: file.uploaded_at,
-          url: `/api/images/${file.key}`,
-          thumbnailUrl: thumbnailUrl,
-          user_id: file.user_id,
-          uploader: uploader,
-          blurDataURL: file.blur_data_url,
-        };
-      });
+      const profilesMap = await buildProfilesMap(supabase, typedFilesData);
+      const files = typedFilesData.map((file) => mapFileRecord(file, profilesMap));
 
       const totalCount = count || 0;
       const isTruncated = rangeTo < totalCount - 1;
@@ -137,6 +146,7 @@ export async function GET(request: NextRequest) {
 
     const { data: filesData, error: filesError, count } = filesResult;
     if (filesError) throw filesError;
+    const typedFilesData = (filesData ?? []) as DbFileRecord[];
 
     const { data: directoriesData, error: directoriesError } = directoriesResult;
     if (directoriesError) throw directoriesError;
@@ -144,49 +154,8 @@ export async function GET(request: NextRequest) {
     // 从 rpc 调用结果中提取文件夹名称数组
     const directories = directoriesData ? directoriesData.map((d: { directory_name: string }) => d.directory_name) : [];
 
-    // --- 后续逻辑保持不变 (获取用户 Profile 等) ---
-    const uniqueUserIds = [...new Set(filesData.map((file) => file.user_id).filter(Boolean))];
-    let profilesMap = new Map();
-    if (uniqueUserIds.length > 0) {
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, display_name, email')
-        .in('id', uniqueUserIds);
-
-      if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-      } else {
-        profilesData.forEach((profile) => profilesMap.set(profile.id, profile));
-      }
-    }
-
-    const files = filesData.map((file) => {
-      const fileNameOnly = file.name;
-      const fileExtension = fileNameOnly.split('.').pop()?.toLowerCase();
-      let thumbnailUrl = '/file.svg';
-      const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-      const videoExtensions = ['mp4', 'webm', 'mov', 'ogg'];
-
-      if (fileExtension && imageExtensions.includes(fileExtension)) {
-        thumbnailUrl = `/api/images/thumbnails/${fileNameOnly}`;
-      } else if (fileExtension && videoExtensions.includes(fileExtension)) {
-        thumbnailUrl = '/video.svg';
-      }
-
-      const profile = profilesMap.get(file.user_id);
-      const uploader = profile?.display_name || profile?.email || '未知';
-
-      return {
-        key: file.name,
-        size: file.size,
-        uploadedAt: file.uploaded_at,
-        url: `/api/images/${file.key}`,
-        thumbnailUrl: thumbnailUrl,
-        user_id: file.user_id,
-        uploader: uploader,
-        blurDataURL: file.blur_data_url,
-      };
-    });
+    const profilesMap = await buildProfilesMap(supabase, typedFilesData);
+    const files = typedFilesData.map((file) => mapFileRecord(file, profilesMap));
 
     const totalCount = count || 0;
     const isTruncated = rangeTo < totalCount - 1;
@@ -234,12 +203,13 @@ export async function DELETE(request: NextRequest) {
     
     const isAdmin = profile?.role === 'admin';
 
-    const { files } = await request.json();
-    if (!Array.isArray(files) || files.length === 0) {
-      return NextResponse.json({ error: 'An array of file objects is required' }, { status: 400 });
+    const parsedPayload = deleteFilesPayloadSchema.safeParse(await request.json());
+    if (!parsedPayload.success) {
+      return NextResponse.json({ error: '请求参数无效。' }, { status: 400 });
     }
+    const { files } = parsedPayload.data;
 
-    const keysToDelete = files.map((file: any) => file.key);
+    const keysToDelete = files.map((file) => file.key);
     let deleteQuery;
 
     if (isAdmin) {
@@ -279,7 +249,7 @@ export async function DELETE(request: NextRequest) {
     const s3Client = getS3Client();
     const bucketName = process.env.R2_BUCKET_NAME;
 
-    const objectsToDelete = files.flatMap((file: any) => {
+    const objectsToDelete = files.flatMap((file) => {
       if (deletedRecords.some(record => record.key === file.key)) {
         const objects = [{ Key: file.key }];
         if (file.thumbnailUrl && file.thumbnailUrl.includes('/thumbnails/')) {

@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import type { User } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
-import type { R2File } from '@/lib/types';
+import { useState } from 'react';
+import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
 
 import { FileList } from '@/features/r2/components/file-list';
 import { FileListSkeleton } from '@/features/r2/components/file-list-skeleton';
@@ -26,11 +24,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-interface UserProfile {
-  id: string;
-  role: string;
-}
 
 function MetricCardSkeleton() {
   return (
@@ -80,38 +73,9 @@ function HomeClientContentSkeleton() {
 }
 
 export function HomeClientContent() {
-  const supabase = createClient();
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [newlyUploadedFiles, setNewlyUploadedFiles] = useState<R2File[]>([]);
+  const { user, profile, loading } = useCurrentUserProfile();
   const [currentPrefix, setCurrentPrefix] = useState('');
-
-  useEffect(() => {
-    const getUserAndProfile = async () => {
-      setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-
-      if (user) {
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('id, role') // Select the role
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching profile:', error);
-        } else {
-          setProfile(profileData);
-        }
-      }
-      setLoading(false);
-    };
-    getUserAndProfile();
-  }, [supabase]);
+  const [uploadVersion, setUploadVersion] = useState(0);
 
   if (loading) {
     return <HomeClientContentSkeleton />;
@@ -128,13 +92,15 @@ export function HomeClientContent() {
       <DynamicUploadForm
         currentPrefix={currentPrefix}
         onUploadSuccess={(newFiles) => {
-          setNewlyUploadedFiles((prev) => [...prev, ...newFiles]);
+          if (newFiles.length > 0) {
+            setUploadVersion((prev) => prev + 1);
+          }
         }}
       />
       <FileList
         user={user}
         profile={profile}
-        newlyUploadedFiles={newlyUploadedFiles}
+        uploadVersion={uploadVersion}
         currentPrefix={currentPrefix}
         setCurrentPrefix={setCurrentPrefix}
       />

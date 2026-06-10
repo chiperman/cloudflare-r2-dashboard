@@ -3,8 +3,8 @@ import {
   PutObjectCommand,
   ListObjectsV2Command,
   DeleteObjectsCommand,
-  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
+import { createFolderPayloadSchema, deleteFolderPayloadSchema } from '@/lib/folder';
 import { getS3Client } from '@/lib/r2';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
@@ -22,15 +22,14 @@ export async function POST(request: NextRequest) {
   let folderKey: string | null = null;
 
   try {
-    const { folderName, currentPrefix } = await request.json();
-
-    const safeNameRegex = /^[a-zA-Z0-9_-]+$/;
-    if (!folderName || !safeNameRegex.test(folderName)) {
+    const parsedPayload = createFolderPayloadSchema.safeParse(await request.json());
+    if (!parsedPayload.success) {
       return NextResponse.json(
-        { error: '无效的文件夹名称。名称只能包含字母、数字、连字符和下划线。' },
+        { error: '请求参数无效。' },
         { status: 400 }
       );
     }
+    const { folderName, currentPrefix } = parsedPayload.data;
 
     folderKey = `${currentPrefix}${folderName}/`;
 
@@ -103,11 +102,11 @@ export async function DELETE(request: NextRequest) {
 
   // Admin-only logic continues...
   try {
-    const { prefix } = await request.json();
-
-    if (!prefix || typeof prefix !== 'string') {
-      return NextResponse.json({ error: '无效的文件夹路径。' }, { status: 400 });
+    const parsedPayload = deleteFolderPayloadSchema.safeParse(await request.json());
+    if (!parsedPayload.success) {
+      return NextResponse.json({ error: '请求参数无效。' }, { status: 400 });
     }
+    const { prefix } = parsedPayload.data;
 
     const s3Client = getS3Client();
     const supabase = createSupabaseAdminClient();

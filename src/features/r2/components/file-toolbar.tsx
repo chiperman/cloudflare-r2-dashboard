@@ -51,8 +51,6 @@ interface FileToolbarProps {
     setNewFolderName: (name: string) => void;
     folderNameError: string;
     onCreateFolder: () => void;
-    isDrawerOpen: boolean;
-    setIsDrawerOpen: (open: boolean) => void;
 }
 
 export function FileToolbar({
@@ -72,8 +70,6 @@ export function FileToolbar({
     setNewFolderName,
     folderNameError,
     onCreateFolder,
-    isDrawerOpen,
-    setIsDrawerOpen,
 }: FileToolbarProps) {
     return (
         <div className="space-y-4 mb-4">

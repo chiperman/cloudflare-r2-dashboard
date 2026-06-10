@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { UploadableFile } from '../types';
 
@@ -41,7 +41,7 @@ export function useMediaConversion({ onProgress }: UseMediaConversionProps = {})
         }
     }, [modulesLoaded, toast]);
 
-    const loadFfmpeg = async () => {
+    const loadFfmpeg = useCallback(async () => {
         if (ffmpegRef.current || !FFmpeg) return;
 
         const ffmpeg = new FFmpeg({
@@ -72,13 +72,17 @@ export function useMediaConversion({ onProgress }: UseMediaConversionProps = {})
                 variant: 'destructive',
             });
         }
-    };
+    }, [FFmpeg, onProgress, toast]);
 
     useEffect(() => {
         if (modulesLoaded && !ffmpegLoaded && FFmpeg) {
-            loadFfmpeg();
+            const timer = window.setTimeout(() => {
+                void loadFfmpeg();
+            }, 0);
+
+            return () => window.clearTimeout(timer);
         }
-    }, [modulesLoaded, ffmpegLoaded, FFmpeg]);
+    }, [modulesLoaded, ffmpegLoaded, FFmpeg, loadFfmpeg]);
 
     const processFile = async (file: File): Promise<Partial<UploadableFile>> => {
         const isHeic = /heic|heif$/i.test(file.name) || file.type === 'image/heic' || file.type === 'image/heif';
