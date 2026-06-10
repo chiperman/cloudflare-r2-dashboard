@@ -168,8 +168,7 @@ export function FileList({
     };
 
     const handleCopyLink = (url: string) => {
-        const absoluteUrl = `${window.location.origin}${url}`;
-        copyToClipboard(absoluteUrl).then(() => {
+        copyToClipboard(url).then(() => {
             toast({ title: '已复制!', description: '链接已到剪贴板' });
         });
     };
@@ -284,6 +283,7 @@ export function FileList({
                                     <a href={previewFile.url} download={previewFile.key}><Download className="w-4 h-4 mr-2" /> 下载</a>
                                 </Button>
                                 <Button variant="outline" onClick={() => handleCopyLink(previewFile.url)}><Copy className="w-4 h-4 mr-2" /> 复制链接</Button>
+                                <Button variant="outline" onClick={() => void handleCopyImage(previewFile)}><ImageIcon className="w-4 h-4 mr-2" /> 复制图片</Button>
                             </div>
                         </>
                     )}
@@ -299,12 +299,13 @@ export function FileList({
                             <div className="h-60 rounded-xl overflow-hidden border">
                                 <ImagePreview file={actionMenuFile} className="w-full h-full" />
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                                 <Button variant="outline" asChild className="w-full">
                                     <a href={actionMenuFile.url} download={actionMenuFile.key}><Download className="w-4 h-4 mr-2" />下载</a>
                                 </Button>
                                 <Button variant="outline" onClick={() => handleCopyLink(actionMenuFile.url)} className="w-full"><Copy className="w-4 h-4 mr-2" />链接</Button>
-                                <Button variant="destructive" onClick={() => void handleDelete(actionMenuFile)} disabled={isDeleting} className="w-full col-span-2">
+                                <Button variant="outline" onClick={() => void handleCopyImage(actionMenuFile)} className="w-full"><ImageIcon className="w-4 h-4 mr-2" />图片</Button>
+                                <Button variant="destructive" onClick={() => void handleDelete(actionMenuFile)} disabled={isDeleting} className="w-full col-span-3">
                                     <Trash2 className="w-4 h-4 mr-2" /> {isDeleting ? '正在删除...' : '删除文件'}
                                 </Button>
                             </div>
