@@ -18,7 +18,6 @@ import {
     Eye,
     MoreHorizontal,
     Download,
-    Image as ImageIcon,
     Copy,
 } from 'lucide-react';
 import {
@@ -56,7 +55,6 @@ interface FileTableProps {
     onDeleteFolder: (dir: string) => void;
     onOpenPreview: (file: R2File, index: number) => void;
     onCopyFilename: (name: string) => void;
-    onCopyImage: (file: R2File) => void;
     onCopyLink: (url: string) => void;
     onDeleteFile: (key: string) => void;
     isDeleting: boolean;
@@ -76,7 +74,6 @@ export function FileTable({
     onDeleteFolder,
     onOpenPreview,
     onCopyFilename,
-    onCopyImage,
     onCopyLink,
     onDeleteFile,
     isDeleting,
@@ -209,12 +206,6 @@ export function FileTable({
                                                         <span>下载</span>
                                                     </a>
                                                 </DropdownMenuItem>
-                                                {/\.(jpe?g|png|gif|webp|bmp)$/i.test(file.key) && (
-                                                    <DropdownMenuItem onSelect={() => onCopyImage(file)}>
-                                                        <ImageIcon className="mr-2 h-4 w-4" />
-                                                        <span>复制图片</span>
-                                                    </DropdownMenuItem>
-                                                )}
                                                 <DropdownMenuItem onSelect={() => onCopyLink(file.url)}>
                                                     <Copy className="mr-2 h-4 w-4" />
                                                     <span>复制链接</span>
