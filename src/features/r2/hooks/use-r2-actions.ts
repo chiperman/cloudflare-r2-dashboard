@@ -104,69 +104,11 @@ export function useR2Actions({ mutate }: UseR2ActionsProps) {
         }, 3000);
     };
 
-    const handleCopyImage = async (file: R2File) => {
-        try {
-            const response = await fetch(file.url);
-            if (!response.ok) throw new Error('Failed to fetch image data');
-            const originalBlob = await response.blob();
-
-            if (!originalBlob.type.startsWith('image/')) {
-                toast({
-                    title: '复制失败',
-                    description: '该文件不是有效的图片格式。',
-                    variant: 'destructive',
-                });
-                return;
-            }
-
-            const pngBlob = await new Promise<Blob | null>((resolve) => {
-                const img = new window.Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                        ctx.drawImage(img, 0, 0);
-                        canvas.toBlob(resolve, 'image/png');
-                    } else {
-                        resolve(null);
-                    }
-                    URL.revokeObjectURL(img.src);
-                };
-                img.onerror = () => {
-                    resolve(null);
-                    URL.revokeObjectURL(img.src);
-                };
-                img.src = URL.createObjectURL(originalBlob);
-            });
-
-            if (!pngBlob) {
-                throw new Error('无法将图片转换为PNG格式');
-            }
-
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
-
-            toast({
-                title: '成功',
-                description: '图片已复制到剪贴板',
-            });
-        } catch (err) {
-            console.error('Failed to copy image:', err);
-            toast({
-                title: '复制失败',
-                description: err instanceof Error ? err.message : '未知错误',
-                variant: 'destructive',
-            });
-        }
-    };
-
     return {
         isDeleting,
         isDownloading,
         handleDelete,
         handleBulkDelete,
         handleBulkDownload,
-        handleCopyImage,
     };
 }
